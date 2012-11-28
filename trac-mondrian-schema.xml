@@ -1,0 +1,332 @@
+<Schema name="trac">
+  <Cube name="Current Tickets" visible="true" cache="true" enabled="true">
+    <Table name="ticket_bi_current" schema="public">
+    </Table>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Type">
+      <Hierarchy name="Type" visible="true" hasAll="true">
+        <Level name="Type" visible="true" column="type" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Component">
+      <Hierarchy name="Component" visible="true" hasAll="true">
+        <Level name="Component" visible="true" column="component" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Owner">
+      <Hierarchy name="Owner" visible="true" hasAll="true">
+        <Level name="Owner" visible="true" column="owner" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Reporter">
+      <Hierarchy name="Reporter" visible="true" hasAll="true">
+        <Level name="Reporter" visible="true" column="reporter" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Quality Assurance Contact">
+      <Hierarchy name="Quality Assurance Contact" visible="true" hasAll="true">
+        <Level name="Quality Assurance Contact" visible="true" column="qualityassurancecontact" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Severity">
+      <Hierarchy name="Severity" visible="true" hasAll="true">
+        <Level name="Severity" visible="true" column="severity" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Priority">
+      <Hierarchy name="Priority" visible="true" hasAll="true">
+        <Level name="Priority" visible="true" column="priority" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Version">
+      <Hierarchy name="Version Parts" visible="true" hasAll="true">
+        <Level name="Major" visible="true" column="version_major" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Minor" visible="true" column="version_minor" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Point" visible="true" column="version_point" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Patch" visible="true" column="version_patch" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Version" visible="true" hasAll="true">
+        <Level name="Version" visible="true" column="version" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Resolved in Version">
+      <Hierarchy name="Resolved in Version Parts" visible="true" hasAll="true">
+        <Level name="Major" visible="true" column="resolvedinversion_major" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Minor" visible="true" column="resolvedinversion_minor" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Point" visible="true" column="resolvedinversion_point" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Patch" visible="true" column="resolvedinversion_patch" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Resolved in Version" visible="true" hasAll="true">
+        <Level name="Resolved in Version" visible="true" column="resolvedinversion" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Milestone">
+      <Hierarchy name="Milestone" visible="true" hasAll="true">
+        <Level name="Milestone" visible="true" column="milestone" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Status">
+      <Hierarchy name="Status" visible="true" hasAll="true" allMemberName="All Statuses" allLevelName="All Statuses">
+        <Level name="Status" visible="true" column="status" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Resolution">
+      <Hierarchy name="Resolution" visible="true" hasAll="true">
+        <Level name="Resolution" visible="true" column="resolution" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Created Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="time_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="time_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="time_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="time_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="time_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="time_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Modified Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="changetime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="changetime_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="changetime_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="changetime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="changetime_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="changetime_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Resolution Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="resolutiontime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="resolutiontime_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="resolutiontime_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="resolutiontime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="resolutiontime_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="resolutiontime_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Count" column="id" datatype="Integer" aggregator="count" visible="true">
+    </Measure>
+    <Measure name="Total Originally Estimated Hours" column="estimatedhours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Total Hours Spent" column="totalhours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Total Estimated Remaining Hours" column="remaininghours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Average Hours Spent" column="totalhours" datatype="Numeric" formatString="#,###.00" aggregator="avg" visible="true">
+    </Measure>
+  </Cube>
+  <Cube name="Historical Snapshots of Tickets" visible="true" cache="true" enabled="true">
+    <Table name="ticket_bi_historical" schema="public">
+    </Table>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Snapshot Time">
+      <Hierarchy name="Time" visible="true" hasAll="false">
+        <Level name="Year" visible="true" column="snapshottime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="snapshottime_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="snapshottime_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Type">
+      <Hierarchy name="Type" visible="true" hasAll="true">
+        <Level name="Type" visible="true" column="type" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Component">
+      <Hierarchy name="Component" visible="true" hasAll="true">
+        <Level name="Component" visible="true" column="component" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Owner">
+      <Hierarchy name="Owner" visible="true" hasAll="true">
+        <Level name="Owner" visible="true" column="owner" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Reporter">
+      <Hierarchy name="Reporter" visible="true" hasAll="true">
+        <Level name="Reporter" visible="true" column="reporter" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Quality Assurance Contact">
+      <Hierarchy name="Quality Assurance Contact" visible="true" hasAll="true">
+        <Level name="Quality Assurance Contact" visible="true" column="qualityassurancecontact" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Severity">
+      <Hierarchy name="Severity" visible="true" hasAll="true">
+        <Level name="Severity" visible="true" column="severity" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Priority">
+      <Hierarchy name="Priority" visible="true" hasAll="true">
+        <Level name="Priority" visible="true" column="priority" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Version">
+      <Hierarchy name="Version Parts" visible="true" hasAll="true">
+        <Level name="Major" visible="true" column="version_major" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Minor" visible="true" column="version_minor" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Point" visible="true" column="version_point" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Patch" visible="true" column="version_patch" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Version" visible="true" hasAll="true">
+        <Level name="Version" visible="true" column="version" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Resolved in Version">
+      <Hierarchy name="Resolved in Version Parts" visible="true" hasAll="true">
+        <Level name="Major" visible="true" column="resolvedinversion_major" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Minor" visible="true" column="resolvedinversion_minor" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Point" visible="true" column="resolvedinversion_point" type="Integer" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Patch" visible="true" column="resolvedinversion_patch" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Resolved in Version" visible="true" hasAll="true">
+        <Level name="Resolved in Version" visible="true" column="resolvedinversion" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Milestone">
+      <Hierarchy name="Milestone" visible="true" hasAll="true">
+        <Level name="Milestone" visible="true" column="milestone" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Status">
+      <Hierarchy name="Status" visible="true" hasAll="true" allMemberName="All Statuses" allLevelName="All Statuses">
+        <Level name="Status" visible="true" column="status" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Resolution">
+      <Hierarchy name="Resolution" visible="true" hasAll="true">
+        <Level name="Resolution" visible="true" column="resolution" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Created Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="time_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="time_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="time_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="time_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="time_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="time_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Modified Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="changetime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="changetime_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="changetime_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="changetime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="changetime_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="changetime_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Resolution Time">
+      <Hierarchy name="Time Monthly" visible="true" hasAll="true" allLevelName="All Months">
+        <Level name="Year" visible="true" column="resolutiontime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" visible="true" column="resolutiontime_quarter" type="String" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" visible="true" column="resolutiontime_month" type="String" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Time Weekly" visible="true" hasAll="true">
+        <Level name="Year" visible="true" column="resolutiontime_year" type="Numeric" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Week" visible="true" column="resolutiontime_week" type="String" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never">
+        </Level>
+        <Level name="Day" visible="true" column="resolutiontime_day" type="String" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Count" column="id" datatype="Integer" aggregator="count" visible="true">
+    </Measure>
+    <Measure name="Total Originally Estimated Hours" column="estimatedhours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Total Hours Spent" column="totalhours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Total Estimated Remaining Hours" column="remaininghours" datatype="Numeric" formatString="#,###.00" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Average Hours Spent" column="totalhours" datatype="Numeric" formatString="#,###.00" aggregator="avg" visible="true">
+    </Measure>
+  </Cube>
+</Schema>
