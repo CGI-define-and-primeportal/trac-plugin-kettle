@@ -115,10 +115,15 @@ CREATE TABLE ticket_bi_historical (
     totalhours double precision,
     remaininghours double precision
 );
+CREATE INDEX ticket_bi_historical_idx_snapshottime ON ticket_bi_historical(snapshottime);
 CREATE INDEX ticket_bi_historical_idx_snapshottime_year ON ticket_bi_historical(snapshottime_year);
 CREATE INDEX ticket_bi_historical_idx_snapshottime_quarter ON ticket_bi_historical(snapshottime_quarter);
 CREATE INDEX ticket_bi_historical_idx_snapshottime_month ON ticket_bi_historical(snapshottime_month);
 CREATE INDEX ticket_bi_historical_idx_snapshottime_day ON ticket_bi_historical(snapshottime_day);
+
+CREATE INDEX ticket_bi_historical_idx_milestone ON ticket_bi_historical(milestone);
+CREATE INDEX ticket_bi_historical_idx_status ON ticket_bi_historical(status);
+CREATE INDEX ticket_bi_historical_idx_type ON ticket_bi_historical(type);
 
 INSERT INTO ticket_bi_historical 
 SELECT 
@@ -129,3 +134,6 @@ date_part('month', current_date) AS "snapshottime_month",
 date_part('week', current_date) AS "snapshottime_week",
 date_part('day', current_date) AS "snapshottime_day",
 * FROM ticket_bi_current ;
+
+
+SELECT snapshottime, SUM(remaininghours) FROM ticket_bi_historical WHERE milestone like 'Crimson (v4.6)%' and resolution is null GROUP BY snapshottime ORDER BY snapshottime;
