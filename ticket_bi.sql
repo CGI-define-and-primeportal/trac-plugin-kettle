@@ -24,13 +24,22 @@ date_part('month',   TIMESTAMP WITH TIME ZONE 'epoch' + (SELECT MAX(time) FROM t
 date_part('week',    TIMESTAMP WITH TIME ZONE 'epoch' + (SELECT MAX(time) FROM ticket_change WHERE ticket = "ticket"."id" AND field = 'resolution' GROUP BY TICKET)/1000000 * INTERVAL '1 second') AS "resolutiontime_week",
 date_part('day',     TIMESTAMP WITH TIME ZONE 'epoch' + (SELECT MAX(time) FROM ticket_change WHERE ticket = "ticket"."id" AND field = 'resolution' GROUP BY TICKET)/1000000 * INTERVAL '1 second') AS "resolutiontime_day",
 
+"ticket"."summary",
+"ticket"."description",
+"ticket"."cc",
+
 "ticket"."component", 
 "ticket"."severity", 
 "ticket"."priority", 
 
 "ticket"."owner", 
+"ownername"."value" as "owner_name",
+
 "ticket"."reporter", 
+"reportername"."value" as "reporter_name",
+
 "qualityassurancecontact"."value" AS "qualityassurancecontact", 
+"qualityassurancecontactname"."value" as "qualityassurancecontact_name",
 
 "ticket"."version", 
 substring("ticket"."version" from '([\\d]+)\.[\\d]+\.[\\d]+') as "version_major",
@@ -62,7 +71,13 @@ LEFT OUTER JOIN "ticket_custom" "remaininghours"
 LEFT OUTER JOIN "ticket_custom" "totalhours" 
   ON ("ticket"."id" = "totalhours"."ticket" AND "totalhours"."name" = 'totalhours')
 LEFT OUTER JOIN "ticket_custom" "estimatedhours" 
-  ON ("ticket"."id" = "estimatedhours"."ticket" AND "estimatedhours"."name" = 'estimatedhours');
+  ON ("ticket"."id" = "estimatedhours"."ticket" AND "estimatedhours"."name" = 'estimatedhours')
+LEFT OUTER JOIN "session_attribute" "ownername"
+  ON ("ticket"."owner" = "ownername"."sid" AND "ownername"."name" = 'name')
+LEFT OUTER JOIN "session_attribute" "reportername"
+  ON ("ticket"."reporter" = "reportername"."sid" AND "reportername"."name" = 'name')
+LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
+  ON ("qualityassurancecontact"."value" = "qualityassurancecontactname"."sid" AND "qualityassurancecontactname"."name" = 'name');
 
 CREATE TABLE ticket_bi_historical (
     snapshottime date,
@@ -133,7 +148,60 @@ date_part('quarter', current_date) AS "snapshottime_quarter",
 date_part('month', current_date) AS "snapshottime_month",
 date_part('week', current_date) AS "snapshottime_week",
 date_part('day', current_date) AS "snapshottime_day",
-* FROM ticket_bi_current ;
+id,
+type,
+"time",
+time_year,
+time_quarter,
+time_month,
+time_week,
+time_day,
+changetime,
+changetime_year,
+changetime_quarter,
+changetime_month,
+changetime_week,
+changetime_day,
+resolutiontime,
+resolutiontime_year,
+resolutiontime_quarter,
+resolutiontime_month,
+resolutiontime_week,
+resolutiontime_day,
+component,
+severity,
+priority,
+owner,
+reporter,
+qualityassurancecontact,
+version,
+version_major,
+version_minor,
+version_point,
+version_patch,
+resolvedinversion,
+resolvedinversion_major,
+resolvedinversion_minor,
+resolvedinversion_point,
+resolvedinversion_patch,
+milestone,
+status,
+resolution,
+keywords,
+estimatedhours,
+totalhours,
+remaininghours
+FROM ticket_bi_current;
 
 
 SELECT snapshottime, SUM(remaininghours) FROM ticket_bi_historical WHERE milestone like 'Crimson (v4.6)%' and resolution is null GROUP BY snapshottime ORDER BY snapshottime;
+
+as define_master:
+CREATE ROLE "define_d4_bi_readonly" PASSWORD 'xxxx' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;
+
+as define_d4:
+GRANT SELECT ON ticket_bi_current TO "define_d4_bi_readonly";
+GRANT SELECT ON ticket_bi_historical TO "define_d4_bi_readonly";
+GRANT SELECT ON ticket_links TO "define_d4_bi_readonly";
+
+
