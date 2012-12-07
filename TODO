@@ -1,0 +1,20 @@
+Macro to run a report/chart inline
+
+Add "Run" option to the Browser context menu for report files
+
+Add 'download as' menu to report viewing page
+
+Add paging
+
+Add PDF export option (currently claims class not found for the exporter?)
+
+Fix Pentaho reports (might need some Java coding to avoid having MasterReport in python-space)
+
+Add report selection feature
+
+Add report uploading
+
+Store reports into ${env.path}/reports ?
+
+Add ticket_bi_current VIEW for sqlite ?
+
