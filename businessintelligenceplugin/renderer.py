@@ -23,8 +23,19 @@ class ReportRenderer(Component):
                          "/usr/lib/jvm/java-7-openjdk-i386/jre/lib/i386/client/libjvm.so",
                          doc="Path to libjvm.so")
 
+    _jdbc_connections = {}
+
     def _get_jdbc_connection(self):
-        scheme, args = _parse_db_str(DatabaseManager(self.env).connection_uri)
+        connection_uri = DatabaseManager(self.env).connection_uri
+        try:
+            # maintain the connection per-environment, but keyed by
+            # the connection_uri in case it changes while we're
+            # running
+            return self._jdbc_connections[connection_uri]
+        except KeyError:
+            for k in self._jdbc_connections:
+                del self._jdbc_connections[k]
+        scheme, args = _parse_db_str(connection_uri)
         if scheme == 'sqlite':
             if not args['path'].startswith('/'):
                 args['path'] = os.path.join(self.env.path, args['path'].lstrip('/'))
@@ -36,6 +47,7 @@ class ReportRenderer(Component):
                                                                   args['user'], args['password'])
         else:
             raise KeyError("Unknown database scheme %s" % scheme)
+        self._jdbc_connections[connection_uri] = jdbcConnection
         return jdbcConnection
 
     def _startJVM(self):
@@ -47,8 +59,6 @@ class ReportRenderer(Component):
         else:
             if not isThreadAttachedToJVM():
                 attachThreadToJVM()
-                # still have some kind of thread problem: java.lang.ExceptionPyRaisable: java.sql.SQLException: No suitable driver found for jdbc:sqlite.....
-
 
     def __del__(self):
         global jvm_running
