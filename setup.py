@@ -45,6 +45,7 @@ Contains Java Libraries under licences.... TODO
     url = "https://define.primeportal.com",
     packages = ['businessintelligenceplugin'],
     package_data = {'businessintelligenceplugin' : ['templates/*',
+                                                    'htdocs/js/*.js',
                                                     'libs/*']},
     install_requires = [
         'JPype',

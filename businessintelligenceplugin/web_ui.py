@@ -1,9 +1,10 @@
 from trac.core import *
 from trac.web.api import IRequestHandler
-from trac.web.chrome import ITemplateProvider
-from trac.web.api import RequestDone, HTTPNotFound
+from trac.web.chrome import ITemplateProvider, add_script, add_script_data
+from trac.web.api import ITemplateStreamFilter, RequestDone, HTTPNotFound
 
-from genshi.builder import Markup
+from genshi.builder import Markup, tag
+from genshi.filters.transform import Transformer
 
 from pkg_resources import resource_filename
 import os
@@ -12,6 +13,104 @@ import tempfile
 import re
 
 from renderer import ReportRenderer
+
+class Charting(Component):
+    implements(ITemplateProvider,
+               ITemplateStreamFilter)
+
+    ### methods for ITemplateProvider
+    def get_htdocs_dirs(self):
+        return [('businessintelligenceplugin', resource_filename(__name__, 'htdocs'))]
+
+    def get_templates_dirs(self):
+        return []
+
+    # ITemplateStreamFilter methods
+    def filter_stream(self, req, method, filename, stream, data):
+        if filename == 'query.html':
+            if 'groups' in data:
+                # <!--[if lte IE 8]> ....
+                #add_script(req, "businessintelligenceplugin/js/excanvas.min.js")
+
+                #add_script(req, "businessintelligenceplugin/js/jquery.colorhelpers.js")
+
+                add_script(req, "businessintelligenceplugin/js/jquery.flot.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.crosshair.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.fillbetween.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.image.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.navigate.js")
+                add_script(req, "businessintelligenceplugin/js/jquery.flot.pie.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.resize.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.selection.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.stack.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.symbol.js")
+                #add_script(req, "businessintelligenceplugin/js/jquery.flot.threshold.js")
+
+                def generate_chart(stream, field, label, function):
+                    chartdata = []
+                    for groupname, grouptickets in data['groups']:
+                        chartdata.append({'label': groupname,
+                                          'data': function(grouptickets)})
+
+                    add_script_data(req, {'chartdata_' + field: chartdata})
+
+                    div = tag.div(
+                        tag.h4(label,style="background: #F6F6F6" ),
+                        tag.div(id_="chartsholder_" + field,style="width: 300px; height: 250px;"),
+                        style="float: left;")
+                    stream |= Transformer("//div[@id='query_results_replaceable']").before(div)
+
+                    # TODO work out why I can't put HTML into the labels, like the examples can. 
+
+                    script = tag.script("""
+    $(function () {
+     $.plot($("div#chartsholder_%s"), chartdata_%s,
+     {
+             series: {
+                pie: {
+                    radius: 1,
+                    innerRadius: 0.3,
+                    show: true,
+                    label: {
+                     show: true,
+                     radius: 1,
+                     formatter: function(label, series) {
+                            return label;
+                     },
+                     background: { opacity: 0.1 }
+                   },
+                }
+            },
+            legend: {
+                show: true,
+                labelFormatter: function(label, series) {
+                        return label + ': ' + Math.round(series.data[0][1]);
+                },
+            }
+     });
+    });
+    """ % (field, field), type_="text/javascript")
+                    stream |= Transformer("//head").append(script)
+                    return stream
+
+                stream = generate_chart(stream, 'count', 'Ticket Count', 
+                                        lambda tickets: len(tickets))
+
+                # can we work out which by looking for number-presentation fields, rather than hard coding this list?
+
+                if 'remaininghours' in data['col']:
+                    stream = generate_chart(stream, 'remaininghours', 'Estimated Remaining Hours', 
+                                            lambda tickets: sum(float(ticket['remaininghours']) for ticket in tickets))
+
+                if 'estimatedhours' in data['col']:
+                    stream = generate_chart(stream, 'estimatedhours', 'Original Estimated Hours', 
+                                            lambda tickets: sum(float(ticket['estimatedhours']) for ticket in tickets))
+
+                if 'totalhours' in data['col']:
+                    stream = generate_chart(stream, 'totalhours', 'Total Hours', 
+                                            lambda tickets: sum(float(ticket['totalhours']) for ticket in tickets))
+
+        return stream
 
 class ReportRunner(Component):
     implements(IRequestHandler, 
