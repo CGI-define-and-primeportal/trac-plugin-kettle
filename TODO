@@ -1,3 +1,5 @@
+== For running BIRT reports ==
+
 Macro to run a report/chart inline
 
 Add "Run" option to the Browser context menu for report files
@@ -17,4 +19,17 @@ Add report uploading
 Store reports into ${env.path}/reports ?
 
 Add ticket_bi_current VIEW for sqlite ?
+
+== For the FLOT charts ==
+
+Extend TicketQuery macro (replacing 'table' with 'chart' and aggregating the
+first col ?)
+
+AJAX load the chart on the query page?
+
+Consider doing the summing in the database, although not sure how much
+faster that would actually be - we still need to get the list of
+tickets via Python (to run the Trac permission system on each ticket),
+and we'd still need to cast the strings into floats...
+
 
