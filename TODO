@@ -20,6 +20,13 @@ Store reports into ${env.path}/reports ?
 
 Add ticket_bi_current VIEW for sqlite ?
 
+Hints on how to run BIRT without a Java EE server: http://digiassn.blogspot.co.uk/2006/07/birt-birt-report-scheduling-without.html?m=1
+
+
+== Pentaho reports ==
+
+We could embed via embedding Kettle? http://ameethpaatil.blogspot.co.uk/2011/08/hello-world-with-pentaho.html?m=1
+
 == For the FLOT charts ==
 
 Extend TicketQuery macro (replacing 'table' with 'chart' and aggregating the
