@@ -1,3 +1,6 @@
+/* TODO: Add view column for milestone dates
+*/
+
 CREATE VIEW ticket_bi_current AS 
 SELECT
 "ticket"."id", 
