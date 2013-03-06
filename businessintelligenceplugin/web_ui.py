@@ -2,6 +2,7 @@ from trac.core import *
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from trac.web.api import ITemplateStreamFilter, RequestDone, HTTPNotFound
+from trac.wiki.macros import WikiMacroBase
 from trac.config import Option
 
 from genshi.builder import Markup, tag
@@ -190,7 +191,7 @@ class ReportRunner(Component):
             return True
 
     def process_request(self, req):
-        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%%20d4/old-tickets-report.html?solution=steel-wheels&path=%%2FProject%%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%%2Fhtml%%3Bpage-mode%%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=%s&password=%s" %  % (self.pentaho_username, self.pentaho_password)
+        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%%20d4/old-tickets-report.html?solution=steel-wheels&path=%%2FProject%%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%%2Fhtml%%3Bpage-mode%%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=%s&password=%s" % (self.pentaho_username, self.pentaho_password)
         report_table = urllib2.urlopen(url).read()
         report_table = report_table.replace("/pentaho/getImage","https://brasstest01.define.logica.com/pentaho/getImage")
         data = {'report_table': Markup(report_table)}
