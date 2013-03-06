@@ -2,6 +2,7 @@ from trac.core import *
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from trac.web.api import ITemplateStreamFilter, RequestDone, HTTPNotFound
+from trac.config import Option
 
 from genshi.builder import Markup, tag
 from genshi.filters.transform import Transformer
@@ -180,12 +181,16 @@ class ReportRunner(Component):
 
 class ReportRunner(Component):
     implements(IRequestHandler)
+
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
     def match_request(self, req):
         if req.path_info.startswith('/reportrender'):
             return True
 
     def process_request(self, req):
-        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%20d4/old-tickets-report.html?solution=steel-wheels&path=%2FProject%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%2Fhtml%3Bpage-mode%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=joe&password=43un9gref"
+        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%%20d4/old-tickets-report.html?solution=steel-wheels&path=%%2FProject%%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%%2Fhtml%%3Bpage-mode%%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=%s&password=%s" %  % (self.pentaho_username, self.pentaho_password)
         report_table = urllib2.urlopen(url).read()
         report_table = report_table.replace("/pentaho/getImage","https://brasstest01.define.logica.com/pentaho/getImage")
         data = {'report_table': Markup(report_table)}
@@ -226,6 +231,10 @@ class PentahoDashboard(Component):
 
 
 class PentahoTagCloudMacro(WikiMacroBase):
+
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
     def expand_macro(self, formatter, name, args):
         largs, kwargs = parse_args(args)
         width = kwargs.get("width","100%")
@@ -239,6 +248,8 @@ class PentahoTagCloudMacro(WikiMacroBase):
                                     "solution":"steel-wheels",
                                     "path": "/Project d4",
                                     "action": action,
+                                    "userid": self.pentaho_username,
+                                    "password": self.pentaho_password,
                                     "milestone": milestone})
         doc = """
 <iframe width="%s" height="%s" src="/pentaho/content/analyzer/viewer?%s">
@@ -246,6 +257,10 @@ class PentahoTagCloudMacro(WikiMacroBase):
         return doc
 
 class PentahoSunburstMacro(WikiMacroBase):
+
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
     action = "chart - sunburst.xanalyzer"
 
     def expand_macro(self, formatter, name, args):
@@ -255,8 +270,8 @@ class PentahoSunburstMacro(WikiMacroBase):
         urlargs = urllib.urlencode({"command": "open",
                                     "solution":"steel-wheels",
                                     "path": "/Project d4",
-                                    "userid": "joe",
-                                    "password": "43un9gref",
+                                    "userid": self.pentaho_username,
+                                    "password": self.pentaho_password,
                                     "action": self.action})
         doc = """
 <iframe width="%s" height="%s" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/viewer?%s">
@@ -270,12 +285,16 @@ class PentahoScatterMacro(WikiMacroBase):
     action = "Time estimates scatter.xanalyzer"
 
 class PentahoOLAPMacro(WikiMacroBase):
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
     def expand_macro(self, formatter, name, args):
         largs, kwargs = parse_args(args)
 
+        # bad idea, what if password contains non URL-safe chars...
         doc = """
-<iframe width="100%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/editor?command=new&userid=joe&password=43un9gref&showFieldList=true&showFieldLayout=true&catalog=d4%20current&cube=d4%20current&autoRefresh=true">
-</iframe>"""
+<iframe width="100%%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/editor?command=new&userid=%s&password=%s&showFieldList=true&showFieldLayout=true&catalog=d4%%20current&cube=d4%%20current&autoRefresh=true">
+</iframe>""" % (self.pentaho_username, self.pentaho_password)
         return doc
 
 class SaikuOLAPMacro(WikiMacroBase):
@@ -283,7 +302,7 @@ class SaikuOLAPMacro(WikiMacroBase):
         largs, kwargs = parse_args(args)
 
         doc = """
-<iframe width="100%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/saiku-ui/index.html?biplugin=true&userid=joe&password=43un9gref">
-</iframe>"""
+<iframe width="100%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/saiku-ui/index.html?biplugin=true&userid=%s&password=%s">
+</iframe>""" % (self.pentaho_username, self.pentaho_password)
         return doc
 
