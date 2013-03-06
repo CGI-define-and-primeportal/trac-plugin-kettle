@@ -43,7 +43,8 @@ class ReportRenderer(Component):
             jdbcConnection = java.sql.DriverManager.getConnection("jdbc:sqlite:%s" % args['path'])
         elif scheme == 'postgres':
             jdbcDriver = JClass("org.postgresql.Driver")
-            jdbcConnection = java.sql.DriverManager.getConnection("jdbc:postgresql://%(host)s:%(port)s/%(path)s" % args,
+            args['path'] = args['path'].strip("/")
+            jdbcConnection = java.sql.DriverManager.getConnection("jdbc:postgresql://%(host)s/%(path)s" % args,
                                                                   args['user'], args['password'])
         else:
             raise KeyError("Unknown database scheme %s" % scheme)
