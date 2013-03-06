@@ -11,6 +11,8 @@ import os
 import uuid
 import tempfile
 import re
+import urllib
+import urllib2
 
 from renderer import ReportRenderer
 
@@ -175,4 +177,113 @@ class ReportRunner(Component):
                                                                   page=0)
             data = {'report_body':  Markup(report_body)}
             return 'report_viewer.html', data, None
+
+class ReportRunner(Component):
+    implements(IRequestHandler)
+    def match_request(self, req):
+        if req.path_info.startswith('/reportrender'):
+            return True
+
+    def process_request(self, req):
+        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%20d4/old-tickets-report.html?solution=steel-wheels&path=%2FProject%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%2Fhtml%3Bpage-mode%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=joe&password=43un9gref"
+        report_table = urllib2.urlopen(url).read()
+        report_table = report_table.replace("/pentaho/getImage","https://brasstest01.define.logica.com/pentaho/getImage")
+        data = {'report_table': Markup(report_table)}
+        return 'embedreport.html', data, None
+
+class OLAPAnalyzer(Component):
+    implements(IRequestHandler)
+    def match_request(self, req):
+        if req.path_info.startswith('/olap'):
+            return True
+
+    def process_request(self, req):
+        #add_script(req, "businessintelligenceplugin/js/analyzer.js")
+        data = {}
+        return 'analyzer.html', data, None
+
+class ReportDesigner(Component):
+    implements(IRequestHandler)
+    def match_request(self, req):
+        if req.path_info.startswith('/reporter'):
+            return True
+
+    def process_request(self, req):
+        #add_script(req, "businessintelligenceplugin/js/reporter.js")
+        data = {}
+        return 'reporter.html', data, None
+
+class PentahoDashboard(Component):
+    implements(IRequestHandler)
+    def match_request(self, req):
+        if req.path_info.startswith('/bidashboard'):
+            return True
+
+    def process_request(self, req):
+        #add_script(req, "businessintelligenceplugin/js/reporter.js")
+        data = {}
+        return 'bidashboard.html', data, None
+
+
+class PentahoTagCloudMacro(WikiMacroBase):
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+        width = kwargs.get("width","100%")
+        height = kwargs.get("height","500")
+        milestone = kwargs.get("milestone")
+        if milestone:
+            action = "chart - tag cloud.xanalyzer"
+        else:
+            action = "chart - tag cloud nofilter.xanalyzer"            
+        urlargs = urllib.urlencode({"command": "open",
+                                    "solution":"steel-wheels",
+                                    "path": "/Project d4",
+                                    "action": action,
+                                    "milestone": milestone})
+        doc = """
+<iframe width="%s" height="%s" src="/pentaho/content/analyzer/viewer?%s">
+</iframe>""" % (width, height, urlargs)
+        return doc
+
+class PentahoSunburstMacro(WikiMacroBase):
+    action = "chart - sunburst.xanalyzer"
+
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+        width = kwargs.get("width","100%")
+        height = kwargs.get("height","500")
+        urlargs = urllib.urlencode({"command": "open",
+                                    "solution":"steel-wheels",
+                                    "path": "/Project d4",
+                                    "userid": "joe",
+                                    "password": "43un9gref",
+                                    "action": self.action})
+        doc = """
+<iframe width="%s" height="%s" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/viewer?%s">
+</iframe>""" % (width, height, urlargs)
+        return doc
+    
+class PentahoCalendarMacro(PentahoSunburstMacro):
+    action = "chart - calendar.xanalyzer"
+
+class PentahoScatterMacro(WikiMacroBase):
+    action = "Time estimates scatter.xanalyzer"
+
+class PentahoOLAPMacro(WikiMacroBase):
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+
+        doc = """
+<iframe width="100%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/editor?command=new&userid=joe&password=43un9gref&showFieldList=true&showFieldLayout=true&catalog=d4%20current&cube=d4%20current&autoRefresh=true">
+</iframe>"""
+        return doc
+
+class SaikuOLAPMacro(WikiMacroBase):
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+
+        doc = """
+<iframe width="100%" height="700" src="https://brasstest01.define.logica.com/pentaho/content/saiku-ui/index.html?biplugin=true&userid=joe&password=43un9gref">
+</iframe>"""
+        return doc
 

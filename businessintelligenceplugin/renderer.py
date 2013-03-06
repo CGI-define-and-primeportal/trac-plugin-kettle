@@ -20,7 +20,7 @@ jvm_running = False
 
 class ReportRenderer(Component):
     jvm_library = Option("BusinessIntelligence","JVM",
-                         "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server/libjvm.so",
+                         "/usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server/libjvm.so",
                          doc="Path to libjvm.so")
 
     _jdbc_connections = {}
