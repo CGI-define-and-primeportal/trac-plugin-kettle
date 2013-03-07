@@ -2,7 +2,7 @@ from trac.core import *
 from trac.web.api import IRequestHandler
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 from trac.web.api import ITemplateStreamFilter, RequestDone, HTTPNotFound
-from trac.wiki.macros import WikiMacroBase
+from trac.wiki.macros import WikiMacroBase, parse_args
 from trac.config import Option
 
 from genshi.builder import Markup, tag
@@ -191,7 +191,7 @@ class ReportRunner(Component):
             return True
 
     def process_request(self, req):
-        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/Project%%20d4/old-tickets-report.html?solution=steel-wheels&path=%%2FProject%%20d4&name=old-tickets-report.prpt&locale=en_GB&paginate=false&output-target=table%%2Fhtml%%3Bpage-mode%%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=%s&password=%s" % (self.pentaho_username, self.pentaho_password)
+        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/steel-wheels/sample-report-1.html?solution=steel-wheels&path=&name=sample-report-1.prpt&locale=en_GB&paginate=false&output-target=table%%2Fhtml%%3Bpage-mode%%3Dstream&dashboard-mode=true&accepted-page=-1&showParameters=true&renderMode=REPORT&htmlProportionalWidth=true&userid=%s&password=%s" % (self.pentaho_username, self.pentaho_password)
         report_table = urllib2.urlopen(url).read()
         report_table = report_table.replace("/pentaho/getImage","https://brasstest01.define.logica.com/pentaho/getImage")
         data = {'report_table': Markup(report_table)}
@@ -274,6 +274,57 @@ class PentahoSunburstMacro(WikiMacroBase):
                                     "userid": self.pentaho_username,
                                     "password": self.pentaho_password,
                                     "action": self.action})
+        doc = """
+<iframe width="%s" height="%s" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/viewer?%s">
+</iframe>""" % (width, height, urlargs)
+        return doc
+    
+class PentahoReportMacro(WikiMacroBase):
+
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+        report = largs[0] + ".prpt"
+        width = kwargs.get("width","100%")
+        height = kwargs.get("height","500")
+        urlargs = urllib.urlencode({"command": "open",
+                                    "solution":"steel-wheels",
+                                    "path": "",
+                                    "userid": self.pentaho_username,
+                                    "password": self.pentaho_password,
+                                    "locale":"en_GB",
+                                    "paginate":"false",
+                                    "output-target":"table/html;page-mode=stream",
+                                    "dashboard-mode":"true",
+                                    "accepted-page":"-1",
+                                    "showParameters":"true",
+                                    "renderMode":"REPORT",
+                                    "htmlProportionalWidth":"true",
+                                    "name": report})
+
+        url = "https://brasstest01.define.logica.com/pentaho/content/reporting/execute/report.html?%s" % urlargs
+        report_table = urllib2.urlopen(url).read()
+        report_table = report_table.replace("/pentaho/getImage","https://brasstest01.define.logica.com/pentaho/getImage")
+        return report_table
+
+class PentahoChartMacro(WikiMacroBase):
+
+    pentaho_username = Option('pentaho','username',"joe")
+    pentaho_password = Option('pentaho','password',"password")
+
+    def expand_macro(self, formatter, name, args):
+        largs, kwargs = parse_args(args)
+        chart = largs[0] + ".xanalyzer"
+        width = kwargs.get("width","100%")
+        height = kwargs.get("height","500")
+        urlargs = urllib.urlencode({"command": "open",
+                                    "solution":"steel-wheels",
+                                    "path": "",
+                                    "userid": self.pentaho_username,
+                                    "password": self.pentaho_password,
+                                    "action": chart})
         doc = """
 <iframe width="%s" height="%s" src="https://brasstest01.define.logica.com/pentaho/content/analyzer/viewer?%s">
 </iframe>""" % (width, height, urlargs)
