@@ -1,0 +1,68 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="layout.html" />	
+  <head>
+    <script type="text/javascript">
+      jQuery(document).ready(function($) {
+      $("#content").find("h2").addAnchor(_("Link to this section"));
+
+      $(".results-table").each(function() {
+       $(this).find('tbody').load($(this).attr('data-url'));
+      });
+
+      $("form").on('submit', function() {
+        $("#content").fadeTo('slow', 0.3);
+        // show some spinner?
+      });
+      })
+    </script>
+    <title>Business Intelligence Transformations</title>
+  </head>
+
+  <body>
+    <h1>Available Transformations</h1>
+
+    <div id="content">
+      <p>
+	To request new jobs or transformations (collectively known as
+	'reports'), or to ask for automated scheduling of existing
+	jobs or transmations, please contact 
+	<a href="mailto:${project.admin}">${project.admin}</a>.
+      </p>
+      <div py:for="transform, details in transformations.items()">
+	<h2 id="${transform}">${details.name}</h2>
+	<h3>${transform} (${details.version})</h3>
+	<p>${details.description}</p>
+	<form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_LIST' in req.perm"
+	      method="post"
+	      action="${req.href.businessintelligence()}">
+	  <input type="hidden" name="transform" value="${transform}"/>
+	  <button type="submit" name="submitButton" value="execute">Execute</button>
+	  <button type="submit" name="submitButton" value="execute_async">Execute in Background</button>
+	</form>
+	<table class="results-table rounded full-width border-header condensed"
+	       data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
+	  <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
+	       and also the contextmenu plugin doesn't insert the empty first th for the checkboxes !-->
+	  <thead>
+	    <tr>
+	      <th>&nbsp;</th>
+	      <th>Name</th>
+	      <th>Size</th>
+	      <th>Rev</th>
+	      <th>Age</th>
+	      <th>Author</th>
+	      <th>Last Change</th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	  </tbody>
+	</table>
+      </div>
+    </div>
+  </body>
+</html>

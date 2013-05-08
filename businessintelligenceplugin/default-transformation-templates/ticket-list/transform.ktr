@@ -10,17 +10,17 @@
     <directory>&#47;</directory>
     <parameters>
         <parameter>
-            <name>Input.Directory</name>
+            <name>DefineInternal.Input.Directory</name>
             <default_value/>
             <description/>
         </parameter>
         <parameter>
-            <name>Output.Directory</name>
+            <name>DefineInternal.Output.Directory</name>
             <default_value>&#47;tmp</default_value>
             <description/>
         </parameter>
         <parameter>
-            <name>Project.ShortName</name>
+            <name>DefineInternal.Project.ShortName</name>
             <default_value/>
             <description>Project Name</description>
         </parameter>
@@ -105,9 +105,9 @@
   <connection>
     <name>projectdata</name>
     <server/>
-    <type>SQLITE</type>
-    <access>Native</access>
-    <database>&#47;home&#47;pipern&#47;src&#47;define-4&#47;development-environment&#47;projects&#47;project1&#47;db&#47;sqlite.db</database>
+    <type>GENERIC</type>
+    <access>JNDI</access>
+    <database>projectdata</database>
     <port>-1</port>
     <username/>
     <password>Encrypted </password>
@@ -118,6 +118,7 @@
       <attribute><code>FORCE_IDENTIFIERS_TO_LOWERCASE</code><attribute>N</attribute></attribute>
       <attribute><code>FORCE_IDENTIFIERS_TO_UPPERCASE</code><attribute>N</attribute></attribute>
       <attribute><code>IS_CLUSTERED</code><attribute>N</attribute></attribute>
+      <attribute><code>PORT_NUMBER</code><attribute>-1</attribute></attribute>
       <attribute><code>QUOTE_ALL_FIELDS</code><attribute>N</attribute></attribute>
       <attribute><code>SUPPORTS_BOOLEAN_DATA_TYPE</code><attribute>N</attribute></attribute>
       <attribute><code>USE_POOLING</code><attribute>N</attribute></attribute>
@@ -141,7 +142,7 @@
         <jsScript_name>Script 1</jsScript_name>
         <jsScript_script>&#47;&#47;Script here
 
-ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&quot;,&quot;demo&quot;) + &quot;.define.logica.com&#47;tickets&#47;&quot; + id;
+ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Project.ShortName&quot;,&quot;demo&quot;) + &quot;.define.logica.com&#47;tickets&#47;&quot; + id;
 </jsScript_script>
       </jsScript>    </jsScripts>    <fields>      <field>        <name>ticket_url</name>
         <rename>ticket_url</rename>
@@ -181,7 +182,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${Output.Directory}&#47;orders</name>
+      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -191,7 +192,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
       <date_time_format/>
       <sheetname>Tickets</sheetname>
       <autosizecolums>N</autosizecolums>
-      <stream_data>Y</stream_data>
+      <stream_data>N</stream_data>
       <protect_sheet>N</protect_sheet>
       <password>Encrypted </password>
       <protected_by/>
@@ -264,7 +265,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <fields>
       <field>
         <name>project_name</name>
-        <variable>${Project.ShortName}</variable>
+        <variable>${DefineInternal.Project.ShortName}</variable>
         <type>String</type>
         <format/>
         <currency/>
@@ -276,7 +277,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
       </field>
       <field>
         <name>project_url</name>
-        <variable>https:&#47;&#47;${Project.ShortName}.define.logica.com&#47;</variable>
+        <variable>https:&#47;&#47;${DefineInternal.Project.ShortName}.define.logica.com&#47;</variable>
         <type>String</type>
         <format/>
         <currency/>
@@ -352,7 +353,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${Output.Directory}&#47;orders</name>
+      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -362,7 +363,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
       <date_time_format/>
       <sheetname>Tickets</sheetname>
       <autosizecolums>N</autosizecolums>
-      <stream_data>Y</stream_data>
+      <stream_data>N</stream_data>
       <protect_sheet>N</protect_sheet>
       <password>Encrypted </password>
       <protected_by/>
@@ -422,7 +423,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <appendLines>N</appendLines>
     <add_to_result_filenames>Y</add_to_result_filenames>
     <file>
-      <name>${Output.Directory}&#47;orders</name>
+      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -431,8 +432,8 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
       <SpecifyFormat>N</SpecifyFormat>
       <date_time_format/>
       <sheetname>Tickets</sheetname>
-      <autosizecolums>N</autosizecolums>
-      <stream_data>Y</stream_data>
+      <autosizecolums>Y</autosizecolums>
+      <stream_data>N</stream_data>
       <protect_sheet>N</protect_sheet>
       <password>Encrypted </password>
       <protected_by/>
@@ -443,16 +444,16 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <template>
       <enabled>Y</enabled>
       <sheet_enabled>N</sheet_enabled>
-      <filename>${Input.Directory}&#47;report-template.xlsx</filename>
+      <filename>${DefineInternal.Input.Directory}&#47;report-template.xlsx</filename>
       <sheetname/>
     </template>
     <fields>
       <field>
         <name>id</name>
-        <type>Integer</type>
+        <type>String</type>
         <format/>
-        <title/>
-        <titleStyleCell>a7</titleStyleCell>
+        <title>Ticket</title>
+        <titleStyleCell/>
         <styleCell/>
         <commentField/>
         <commentAuthorField/>
@@ -463,32 +464,8 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
         <name>type</name>
         <type>String</type>
         <format/>
-        <title/>
-        <titleStyleCell>a7</titleStyleCell>
-        <styleCell/>
-        <commentField/>
-        <commentAuthorField/>
-        <formula>N</formula>
-        <hyperlinkField/>
-      </field>
-      <field>
-        <name>priority</name>
-        <type>String</type>
-        <format/>
-        <title/>
-        <titleStyleCell>a7</titleStyleCell>
-        <styleCell/>
-        <commentField/>
-        <commentAuthorField/>
-        <formula>N</formula>
-        <hyperlinkField/>
-      </field>
-      <field>
-        <name>summary</name>
-        <type>String</type>
-        <format/>
-        <title/>
-        <titleStyleCell>a7</titleStyleCell>
+        <title>Type</title>
+        <titleStyleCell/>
         <styleCell/>
         <commentField/>
         <commentAuthorField/>
@@ -499,8 +476,20 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
         <name>status</name>
         <type>String</type>
         <format/>
-        <title/>
-        <titleStyleCell>a7</titleStyleCell>
+        <title>Status</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>summary</name>
+        <type>String</type>
+        <format/>
+        <title>Summary</title>
+        <titleStyleCell/>
         <styleCell/>
         <commentField/>
         <commentAuthorField/>
@@ -511,8 +500,128 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
         <name>component</name>
         <type>String</type>
         <format/>
-        <title/>
-        <titleStyleCell>A7</titleStyleCell>
+        <title>Component</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>priority</name>
+        <type>String</type>
+        <format/>
+        <title>Priority</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>milestone</name>
+        <type>String</type>
+        <format/>
+        <title>Milestone</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>owner_name</name>
+        <type>String</type>
+        <format/>
+        <title>Owner</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>reporter_name</name>
+        <type>String</type>
+        <format/>
+        <title>Reporter</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>time</name>
+        <type>Date</type>
+        <format>yyyy-mm-dd</format>
+        <title>Created</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>changetime</name>
+        <type>Date</type>
+        <format>yyyy-mm-dd</format>
+        <title>Changed</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>resolutiontime</name>
+        <type>Date</type>
+        <format>yyyy-mm-dd</format>
+        <title>Resolved</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>estimatedhours</name>
+        <type>Number</type>
+        <format>#,##0.00</format>
+        <title>Estimated Hours</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>remaininghours</name>
+        <type>Number</type>
+        <format>#,##0.00</format>
+        <title>Remaining Hours</title>
+        <titleStyleCell/>
+        <styleCell/>
+        <commentField/>
+        <commentAuthorField/>
+        <formula>N</formula>
+        <hyperlinkField/>
+      </field>
+      <field>
+        <name>totalhours</name>
+        <type>Number</type>
+        <format>#,##0.00</format>
+        <title>Spent Hours</title>
+        <titleStyleCell/>
         <styleCell/>
         <commentField/>
         <commentAuthorField/>
@@ -552,7 +661,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${Output.Directory}&#47;orders</name>
+      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -562,7 +671,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
       <date_time_format/>
       <sheetname>Tickets</sheetname>
       <autosizecolums>N</autosizecolums>
-      <stream_data>Y</stream_data>
+      <stream_data>N</stream_data>
       <protect_sheet>N</protect_sheet>
       <password>Encrypted </password>
       <protected_by/>
@@ -610,24 +719,86 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;Project.ShortName&
            </partitioning>
     <connection>projectdata</connection>
     <sql>SELECT
-  id
-, type
-, time
-, changetime
-, component
-, severity
-, priority
-, owner
-, reporter
-, cc
-, version
-, milestone
-, status
-, resolution
-, summary
-, description
-, keywords
-FROM ticket
+&quot;ticket&quot;.&quot;id&quot;, 
+&quot;ticket&quot;.&quot;type&quot;, 
+
+TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos; AS &quot;time&quot;,
+date_part(&apos;year&apos;,    TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;time_year&quot;,
+date_part(&apos;quarter&apos;, TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;time_quarter&quot;,
+date_part(&apos;month&apos;,   TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;time_month&quot;,
+date_part(&apos;week&apos;,    TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;time_week&quot;,
+date_part(&apos;day&apos;,     TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;time&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;time_day&quot;,
+
+TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos; AS &quot;changetime&quot;,
+date_part(&apos;year&apos;  ,  TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;changetime_year&quot;,
+date_part(&apos;quarter&apos;, TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;changetime_quarter&quot;,
+date_part(&apos;month&apos;,   TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;changetime_month&quot;,
+date_part(&apos;week&apos;,    TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;changetime_week&quot;,
+date_part(&apos;day&apos;,     TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + &quot;ticket&quot;.&quot;changetime&quot;&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;changetime_day&quot;,
+
+TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET) &#47;1000000 * INTERVAL &apos;1 second&apos; AS &quot;resolutiontime&quot;,
+date_part(&apos;year&apos;,    TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET)&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;resolutiontime_year&quot;,
+date_part(&apos;quarter&apos;, TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET)&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;resolutiontime_quarter&quot;,
+date_part(&apos;month&apos;,   TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET)&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;resolutiontime_month&quot;,
+date_part(&apos;week&apos;,    TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET)&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;resolutiontime_week&quot;,
+date_part(&apos;day&apos;,     TIMESTAMP WITH TIME ZONE &apos;epoch&apos; + (SELECT MAX(time) FROM ticket_change WHERE ticket = &quot;ticket&quot;.&quot;id&quot; AND field = &apos;resolution&apos; GROUP BY TICKET)&#47;1000000 * INTERVAL &apos;1 second&apos;) AS &quot;resolutiontime_day&quot;,
+
+&quot;ticket&quot;.&quot;summary&quot;,
+&quot;ticket&quot;.&quot;description&quot;,
+&quot;ticket&quot;.&quot;cc&quot;,
+
+&quot;ticket&quot;.&quot;component&quot;, 
+&quot;ticket&quot;.&quot;severity&quot;, 
+&quot;ticket&quot;.&quot;priority&quot;, 
+
+&quot;ticket&quot;.&quot;owner&quot;, 
+&quot;ownername&quot;.&quot;value&quot; as &quot;owner_name&quot;,
+
+&quot;ticket&quot;.&quot;reporter&quot;, 
+&quot;reportername&quot;.&quot;value&quot; as &quot;reporter_name&quot;,
+
+&quot;qualityassurancecontact&quot;.&quot;value&quot; AS &quot;qualityassurancecontact&quot;, 
+&quot;qualityassurancecontactname&quot;.&quot;value&quot; as &quot;qualityassurancecontact_name&quot;,
+
+&quot;ticket&quot;.&quot;version&quot;, 
+substring(&quot;ticket&quot;.&quot;version&quot; from &apos;([\\d]+)\.[\\d]+\.[\\d]+&apos;) as &quot;version_major&quot;,
+substring(&quot;ticket&quot;.&quot;version&quot; from &apos;[\\d]+\.([\\d]+)\.[\\d]+&apos;) as &quot;version_minor&quot;,
+substring(&quot;ticket&quot;.&quot;version&quot; from &apos;[\\d]+\.[\\d]+\.([\\d]+)&apos;) as &quot;version_point&quot;,
+substring(&quot;ticket&quot;.&quot;version&quot; from &apos;[\\d]+\.[\\d]+\.[\\d]+(.+)&apos;) as &quot;version_patch&quot;,
+
+&quot;resolvedinversion&quot;.&quot;value&quot; AS &quot;resolvedinversion&quot;, 
+substring(&quot;resolvedinversion&quot;.&quot;value&quot; from &apos;([\\d]+)\.[\\d]+\.[\\d]+&apos;) as &quot;resolvedinversion_major&quot;,
+substring(&quot;resolvedinversion&quot;.&quot;value&quot; from &apos;[\\d]+\.([\\d]+)\.[\\d]+&apos;) as &quot;resolvedinversion_minor&quot;,
+substring(&quot;resolvedinversion&quot;.&quot;value&quot; from &apos;[\\d]+\.[\\d]+\.([\\d]+)&apos;) as &quot;resolvedinversion_point&quot;,
+substring(&quot;resolvedinversion&quot;.&quot;value&quot; from &apos;[\\d]+\.[\\d]+\.[\\d]+(.+)&apos;) as &quot;resolvedinversion_patch&quot;,
+
+&quot;ticket&quot;.&quot;milestone&quot;, 
+&quot;ticket&quot;.&quot;status&quot;, 
+&quot;ticket&quot;.&quot;resolution&quot;, 
+&quot;ticket&quot;.&quot;keywords&quot;, 
+CASE WHEN btrim(&quot;estimatedhours&quot;.&quot;value&quot;)~E&apos;^[\\d\\.]+$&apos; THEN &quot;estimatedhours&quot;.&quot;value&quot;::double precision ELSE 0.0 END AS &quot;estimatedhours&quot;, 
+CASE WHEN btrim(&quot;totalhours&quot;.&quot;value&quot;)~E&apos;^[\\d\\.]+$&apos; THEN &quot;totalhours&quot;.&quot;value&quot;::double precision ELSE 0.0 END AS &quot;totalhours&quot;, 
+CASE WHEN btrim(&quot;remaininghours&quot;.&quot;value&quot;)~E&apos;^[\\d\\.]+$&apos; THEN &quot;remaininghours&quot;.&quot;value&quot;::double precision ELSE 0.0 END AS &quot;remaininghours&quot;
+
+FROM &quot;ticket&quot; &quot;ticket&quot; 
+LEFT OUTER JOIN &quot;ticket_custom&quot; &quot;resolvedinversion&quot; 
+  ON (&quot;ticket&quot;.&quot;id&quot; = &quot;resolvedinversion&quot;.&quot;ticket&quot; AND &quot;resolvedinversion&quot;.&quot;name&quot; = &apos;resolvedinversion&apos;)
+LEFT OUTER JOIN &quot;ticket_custom&quot; &quot;qualityassurancecontact&quot; 
+  ON (&quot;ticket&quot;.&quot;id&quot; = &quot;qualityassurancecontact&quot;.&quot;ticket&quot; AND &quot;qualityassurancecontact&quot;.&quot;name&quot; = &apos;qualityassurancecontact&apos;)
+LEFT OUTER JOIN &quot;ticket_custom&quot; &quot;remaininghours&quot; 
+  ON (&quot;ticket&quot;.&quot;id&quot; = &quot;remaininghours&quot;.&quot;ticket&quot; AND &quot;remaininghours&quot;.&quot;name&quot; = &apos;remaininghours&apos;)
+LEFT OUTER JOIN &quot;ticket_custom&quot; &quot;totalhours&quot; 
+  ON (&quot;ticket&quot;.&quot;id&quot; = &quot;totalhours&quot;.&quot;ticket&quot; AND &quot;totalhours&quot;.&quot;name&quot; = &apos;totalhours&apos;)
+LEFT OUTER JOIN &quot;ticket_custom&quot; &quot;estimatedhours&quot; 
+  ON (&quot;ticket&quot;.&quot;id&quot; = &quot;estimatedhours&quot;.&quot;ticket&quot; AND &quot;estimatedhours&quot;.&quot;name&quot; = &apos;estimatedhours&apos;)
+LEFT OUTER JOIN &quot;session_attribute&quot; &quot;ownername&quot;
+  ON (&quot;ticket&quot;.&quot;owner&quot; = &quot;ownername&quot;.&quot;sid&quot; AND &quot;ownername&quot;.&quot;name&quot; = &apos;name&apos;)
+LEFT OUTER JOIN &quot;session_attribute&quot; &quot;reportername&quot;
+  ON (&quot;ticket&quot;.&quot;reporter&quot; = &quot;reportername&quot;.&quot;sid&quot; AND &quot;reportername&quot;.&quot;name&quot; = &apos;name&apos;)
+LEFT OUTER JOIN &quot;session_attribute&quot; &quot;qualityassurancecontactname&quot;
+  ON (&quot;qualityassurancecontact&quot;.&quot;value&quot; = &quot;qualityassurancecontactname&quot;.&quot;sid&quot; AND &quot;qualityassurancecontactname&quot;.&quot;name&quot; = &apos;name&apos;)
+
+ORDER BY id;
 </sql>
     <limit>0</limit>
     <lookup/>
