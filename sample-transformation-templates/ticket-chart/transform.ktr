@@ -2,10 +2,11 @@
 <transformation>
   <info>
     <name>transform</name>
-    <description/>
+    <description>Example transform which runs a report containing a simple pie chart</description>
     <extended_description/>
-    <trans_version/>
+    <trans_version>0.1</trans_version>
     <trans_type>Normal</trans_type>
+    <trans_status>1</trans_status>
     <directory>&#47;</directory>
     <parameters>
     </parameters>
