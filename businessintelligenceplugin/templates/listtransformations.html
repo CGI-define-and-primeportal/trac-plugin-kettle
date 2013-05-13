@@ -41,8 +41,8 @@
 	      method="post"
 	      action="${req.href.businessintelligence()}">
 	  <input type="hidden" name="transform" value="${transform}"/>
-	  <button type="submit" name="submitButton" value="execute">Execute</button>
-	  <button type="submit" name="submitButton" value="execute_async">Execute in Background</button>
+	  <button type="submit" name="action" value="execute">Execute</button>
+	  <button type="submit" name="action" value="execute_async">Execute in Background</button>
 	</form>
 	<table class="results-table rounded full-width border-header condensed"
 	       data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
