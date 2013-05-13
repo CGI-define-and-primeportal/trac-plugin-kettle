@@ -73,7 +73,11 @@
 	<a class="get_url" href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
 	  Show integration URL
 	</a>
-
+	<br/>
+	<a href="${req.href.browser('define-reports', transform)}">
+	  Visit in File Archive
+	</a>
+	
 	<table class="results-table rounded full-width border-header condensed"
 	       data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
 	  <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
