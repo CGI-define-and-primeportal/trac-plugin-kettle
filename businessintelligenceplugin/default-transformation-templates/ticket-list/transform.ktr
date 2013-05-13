@@ -10,18 +10,8 @@
     <directory>&#47;</directory>
     <parameters>
         <parameter>
-            <name>DefineInternal.Input.Directory</name>
-            <default_value/>
-            <description/>
-        </parameter>
-        <parameter>
-            <name>DefineInternal.Output.Directory</name>
-            <default_value>&#47;tmp</default_value>
-            <description/>
-        </parameter>
-        <parameter>
             <name>DefineInternal.Project.ShortName</name>
-            <default_value/>
+            <default_value>demo</default_value>
             <description>Project Name</description>
         </parameter>
     </parameters>
@@ -83,25 +73,6 @@
   </info>
   <notepads>
   </notepads>
-  <connection>
-    <name>AgileBI</name>
-    <server>localhost</server>
-    <type>MONETDB</type>
-    <access>Native</access>
-    <database>pentaho-instaview</database>
-    <port>50006</port>
-    <username>monetdb</username>
-    <password>Encrypted 2be98afc86aa7f2e4cb14a17edb86abd8</password>
-    <servername/>
-    <data_tablespace/>
-    <index_tablespace/>
-    <attributes>
-      <attribute><code>EXTRA_OPTION_INFOBRIGHT.characterEncoding</code><attribute>UTF-8</attribute></attribute>
-      <attribute><code>EXTRA_OPTION_MYSQL.defaultFetchSize</code><attribute>500</attribute></attribute>
-      <attribute><code>EXTRA_OPTION_MYSQL.useCursorFetch</code><attribute>true</attribute></attribute>
-      <attribute><code>PORT_NUMBER</code><attribute>50006</attribute></attribute>
-    </attributes>
-  </connection>
   <connection>
     <name>projectdata</name>
     <server/>
@@ -182,7 +153,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Pro
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
+      <name>tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -353,7 +324,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Pro
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
+      <name>tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -423,7 +394,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Pro
     <appendLines>N</appendLines>
     <add_to_result_filenames>Y</add_to_result_filenames>
     <file>
-      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
+      <name>tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>
@@ -438,13 +409,13 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Pro
       <password>Encrypted </password>
       <protected_by/>
       <splitevery>0</splitevery>
-      <if_file_exists>new</if_file_exists>
+      <if_file_exists>reuse</if_file_exists>
       <if_sheet_exists>reuse</if_sheet_exists>
       </file>
     <template>
       <enabled>Y</enabled>
       <sheet_enabled>N</sheet_enabled>
-      <filename>${DefineInternal.Input.Directory}&#47;report-template.xlsx</filename>
+      <filename>${Internal.Transformation.Filename.Directory}&#47;report-template.xlsx</filename>
       <sheetname/>
     </template>
     <fields>
@@ -661,7 +632,7 @@ ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Pro
     <appendLines>N</appendLines>
     <add_to_result_filenames>N</add_to_result_filenames>
     <file>
-      <name>${DefineInternal.Output.Directory}&#47;tickets</name>
+      <name>tickets</name>
       <extention>xlsx</extention>
       <do_not_open_newfile_init>Y</do_not_open_newfile_init>
       <split>N</split>

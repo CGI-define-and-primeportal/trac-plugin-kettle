@@ -149,9 +149,7 @@ class TransformExecutor(Component):
 
         executable = os.path.join(resource_filename(__name__, 'pentaho-data-integration'),"pan.sh")
 
-        params = {'DefineInternal.Input.Directory': os.path.split(self._list_transformation_files()[transformation]['full_path'])[0],
-                  'DefineInternal.Output.Directory': os.path.join(tempdir, "svn"),
-                  'DefineInternal.Project.ShortName': os.path.split(self.env.path)[1]}
+        params = {'DefineInternal.Project.ShortName': os.path.split(self.env.path)[1]}
 
         args = [
             executable,
@@ -169,6 +167,7 @@ class TransformExecutor(Component):
         # http://codereview.stackexchange.com/questions/6567/how-to-redirect-a-subprocesses-output-stdout-and-stderr-to-logging-module
         pan = subprocess.Popen(args, 
                                executable=executable,
+                               cwd=os.path.join(tempdir, "svn"),
                                env={'PENTAHO_DI_JAVA_OPTIONS': "-Djava.awt.headless=true -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi")},
                                stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                                
