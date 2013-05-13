@@ -7,7 +7,7 @@ from trac.web import IRequestHandler, RequestDone
 from trac.web.chrome import ITemplateProvider, add_javascript, add_stylesheet
 from trac.util import content_disposition
 
-from tracrpc.api import IXMLRPCHandler
+from tracrpc.api import IXMLRPCHandler, Binary
 
 from genshi.builder import tag
 
@@ -119,6 +119,7 @@ class TransformExecutor(Component):
         yield ("BUSINESSINTELLIGENCE_TRANSFORMATION_LIST", ((dict,),), self.list_transformations)
         yield ("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE", ((None, str),), self.execute_transformation)
         yield ("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE", ((list, str),), self.execute_transformation_sync)
+        yield ("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE", ((Binary, str),), self.execute_transformation_download)
 
     def list_transformations(self, req):
         return self._list_transformation_files()
@@ -132,8 +133,13 @@ class TransformExecutor(Component):
         thread.start_new_thread(self._do_execute_transformation, (transformation,))
 
     def execute_transformation_sync(self, req, transformation):
-        """Synchronous executation of transformation"""
+        """Synchronous executation of transformation."""
         return self._do_execute_transformation(transformation)
+
+    def execute_transformation_download(self, req, transformation):
+        """Synchronous executation of transformation, without storing the result and returning the content over the API"""
+        filename, stat, filestream = self._do_execute_transformation(transformation, store=False, return_bytes_handle=True)
+        return Binary(filestream.read())
 
     # IPermissionRequestor methods
 
