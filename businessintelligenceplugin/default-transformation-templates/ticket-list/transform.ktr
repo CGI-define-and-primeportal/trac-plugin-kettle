@@ -113,7 +113,7 @@
         <jsScript_name>Script 1</jsScript_name>
         <jsScript_script>&#47;&#47;Script here
 
-ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Project.ShortName&quot;,&quot;demo&quot;) + &quot;.define.logica.com&#47;tickets&#47;&quot; + id;
+ticket_url = &quot;https:&#47;&#47;&quot; + getVariable(&quot;DefineInternal.Project.ShortName&quot;,&quot;demo&quot;) + &quot;.define.logica.com&#47;ticket&#47;&quot; + id;
 </jsScript_script>
       </jsScript>    </jsScripts>    <fields>      <field>        <name>ticket_url</name>
         <rename>ticket_url</rename>
