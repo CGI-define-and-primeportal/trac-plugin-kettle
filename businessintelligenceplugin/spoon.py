@@ -19,6 +19,10 @@ class SpoonExecutor(Component):
                """Start spoon
                """,
                self._complete_transformation_list, self._do_spoon)
+        yield ('businessintelligence simple-jndi', '',
+               """Write a JDNI properties file to "$HOME/.pentaho/simple-jndi". This is useful before starting report-designer/report-designer.sh
+               """,
+               self._complete_transformation_list, self._do_jndi)
 
     def _complete_transformation_list(self, args):
         pass
@@ -37,3 +41,8 @@ class SpoonExecutor(Component):
                                       'DISPLAY': os.environ['DISPLAY']})
 
         spoon.wait()
+
+    def _do_jndi(self):
+        write_simple_jndi_properties(DatabaseManager(self.env).connection_uri,
+                                     os.path.expanduser("~/.pentaho"))
+
