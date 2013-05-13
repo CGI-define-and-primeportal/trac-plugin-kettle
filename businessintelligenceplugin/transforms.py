@@ -133,11 +133,11 @@ class TransformExecutor(Component):
         thread.start_new_thread(self._do_execute_transformation, (transformation,))
 
     def execute_transformation_sync(self, req, transformation):
-        """Synchronous executation of transformation."""
+        """Synchronous execution of transformation."""
         return self._do_execute_transformation(transformation)
 
     def execute_transformation_download(self, req, transformation):
-        """Synchronous executation of transformation, without storing the result and returning the content over the API"""
+        """Synchronous execution of transformation, without storing the result and returning the content over the API"""
         filename, stat, filestream = self._do_execute_transformation(transformation, store=False, return_bytes_handle=True)
         return Binary(filestream.read())
 
