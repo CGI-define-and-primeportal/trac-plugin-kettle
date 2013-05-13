@@ -37,7 +37,7 @@
 	<h2 id="${transform}">${details.name}</h2>
 	<h3>${transform} (${details.version})</h3>
 	<p>${details.description}</p>
-	<form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_LIST' in req.perm"
+	<form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm"
 	      method="post"
 	      action="${req.href.businessintelligence()}">
 	  <input type="hidden" name="transform" value="${transform}"/>
