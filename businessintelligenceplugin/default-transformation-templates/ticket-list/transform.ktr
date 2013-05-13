@@ -2,11 +2,11 @@
 <transformation>
   <info>
     <name>Export all tickets to Excel</name>
-    <description>Create Excel spreadsheet with basic details for all tickets</description>
+    <description>Create Excel spreadsheet with basic details for all tickets. This includes all tickets - so if you have your project configured to only expose certain tickets to certain people, be aware this report result will include all tickets.</description>
     <extended_description/>
     <trans_version>1.0</trans_version>
     <trans_type>Normal</trans_type>
-    <trans_status>1</trans_status>
+    <trans_status>2</trans_status>
     <directory>&#47;</directory>
     <parameters>
         <parameter>
