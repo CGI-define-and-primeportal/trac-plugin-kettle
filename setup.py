@@ -48,6 +48,7 @@ setup(
     entry_points = {
         'trac.plugins': [
             'businessintelligenceplugin.transforms = businessintelligenceplugin.transforms',
+            'businessintelligenceplugin.spoon = businessintelligenceplugin.spoon',
         ]
     }
 )

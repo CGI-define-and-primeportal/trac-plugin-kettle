@@ -17,7 +17,9 @@ import shutil
 import subprocess
 import thread
 
-from pkg_resources import require, resource_filename, ResolutionError
+from pkg_resources import resource_filename
+
+from businessintelligenceplugin.util import write_simple_jndi_properties
 
 class TransformExecutor(Component):
     implements(IAdminCommandProvider,
@@ -116,34 +118,10 @@ class TransformExecutor(Component):
 
     def _do_execute_transformation(self, transformation):
         tempdir = tempfile.mkdtemp()
-        os.mkdir(os.path.join(tempdir,"simple-jndi"))
         os.mkdir(os.path.join(tempdir, "svn"))
 
-        connection_uri = DatabaseManager(self.env).connection_uri
-        scheme, args = _parse_db_str(connection_uri)
-        if scheme == 'sqlite':
-            if not args['path'].startswith('/'):
-                args['path'] = os.path.join(self.env.path, args['path'].lstrip('/'))
-            jdbcDriver = "org.sqlite.JDBC"
-            jdbcConnection = "jdbc:sqlite:%s" % args['path']
-            jdbcUser = ""
-            jdbcPassword = ""
-        elif scheme == 'postgres':
-            jdbcDriver = "org.postgresql.Driver"
-            args['path'] = args['path'].strip("/")
-            jdbcConnection = "jdbc:postgresql://%(host)s/%(path)s" % args
-            jdbcUser = args['user']
-            jdbcPassword = args['password']
-        else:
-            raise KeyError("Unknown database scheme %s" % scheme)
-
-        properties = open(os.path.join(os.path.join(tempdir,"simple-jndi"), "default.properties"), 'w')
-        properties.write("projectdata/type=javax.sql.DataSource\n")
-        properties.write("projectdata/driver=%s\n" % jdbcDriver)
-        properties.write("projectdata/url=%s\n" % jdbcConnection)
-        properties.write("projectdata/user=%s\n" % jdbcUser)
-        properties.write("projectdata/password=%s\n" % jdbcPassword)
-        properties.close()
+        write_simple_jndi_properties(DatabaseManager(self.env).connection_uri,
+                                     tempdir)
 
         # execute transform 
 
