@@ -21,6 +21,12 @@
        return false;
       });
 
+      $("#dialogupload").dialog({autoOpen:false, height:250,width:500, modal:true, title:"Upload Transformations"});
+      $("#uploadbutton").click(function(){
+         $("#dialogupload").dialog('open');
+       return false;
+      });
+
       $("form").on('submit', function() {
         $("#content").fadeTo('slow', 0.3);
         // show some spinner?
@@ -51,8 +57,27 @@
       </p>
     </div>
 
+    <div py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm" id="dialogupload">
+      <py:if test="'TRAC_ADMIN' in req.perm">
+	<p>
+	  To upload transformations, copy them to this path on the server:
+	</p>
+	<tt>${env.path + "/transformation-templates"}</tt>
+	<p>
+	  Create a new folder for a new transformation, or replace files
+	  in existing transformation folders.
+	</p>
+      </py:if>
+      <py:if test="'TRAC_ADMIN' not in req.perm">
+	To request new jobs or transformations (collectively known as
+	'reports'), or to ask for automated scheduling of existing
+	jobs or transformations, please contact 
+	<a href="mailto:${project.admin}">${project.admin}</a>.
+      </py:if>
+    </div>
+
     <div id="content">
-      <p>
+      <p py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' not in req.perm">
 	To request new jobs or transformations (collectively known as
 	'reports'), or to ask for automated scheduling of existing
 	jobs or transformations, please contact 
