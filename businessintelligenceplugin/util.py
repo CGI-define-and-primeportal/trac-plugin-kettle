@@ -1,13 +1,14 @@
 import os
-from trac.db.api import _parse_db_str
+from trac.db.api import DatabaseManager, _parse_db_str
 
-def write_simple_jndi_properties(connection_uri, targetdir):
+def write_simple_jndi_properties(env, targetdir):
+    connection_uri = DatabaseManager(env).connection_uri
     if not os.path.exists(os.path.join(targetdir,"simple-jndi")):
         os.mkdir(os.path.join(targetdir,"simple-jndi"))
     scheme, args = _parse_db_str(connection_uri)
     if scheme == 'sqlite':
         if not args['path'].startswith('/'):
-            args['path'] = os.path.join(self.env.path, args['path'].lstrip('/'))
+            args['path'] = os.path.join(env.path, args['path'].lstrip('/'))
         jdbcDriver = "org.sqlite.JDBC"
         jdbcConnection = "jdbc:sqlite:%s" % args['path']
         jdbcUser = ""

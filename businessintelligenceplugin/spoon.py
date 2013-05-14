@@ -1,6 +1,5 @@
 from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
-from trac.db.api import DatabaseManager
 
 import os
 import tempfile
@@ -29,8 +28,7 @@ class SpoonExecutor(Component):
 
     def _do_spoon(self):
         tempdir = tempfile.mkdtemp()
-        write_simple_jndi_properties(DatabaseManager(self.env).connection_uri,
-                                     tempdir)
+        write_simple_jndi_properties(self.env, tempdir)
 
         # execute transform 
 

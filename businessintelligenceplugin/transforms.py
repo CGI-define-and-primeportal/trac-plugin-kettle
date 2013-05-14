@@ -1,6 +1,5 @@
 from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
-from trac.db.api import DatabaseManager, _parse_db_str
 from trac.versioncontrol.api import RepositoryManager, NoSuchNode
 from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler, RequestDone
@@ -157,8 +156,7 @@ class TransformExecutor(Component):
         tempdir = tempfile.mkdtemp()
         os.mkdir(os.path.join(tempdir, "svn"))
 
-        write_simple_jndi_properties(DatabaseManager(self.env).connection_uri,
-                                     tempdir)
+        write_simple_jndi_properties(self.env, tempdir)
 
         # execute transform 
 
