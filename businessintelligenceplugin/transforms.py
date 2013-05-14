@@ -3,7 +3,7 @@ from trac.core import Component, implements
 from trac.versioncontrol.api import RepositoryManager, NoSuchNode
 from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler, RequestDone
-from trac.web.chrome import ITemplateProvider, add_javascript, add_stylesheet, add_ctxtnav
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav
 from trac.util import content_disposition
 
 from tracrpc.api import IXMLRPCHandler, Binary
@@ -72,7 +72,8 @@ class TransformExecutor(Component):
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_LIST")
             data = {'transformations': self._list_transformation_files()}
             add_stylesheet(req, 'contextmenu/contextmenu.css')
-            add_javascript(req, 'contextmenu/contextmenu.js')
+            add_script(req, 'contextmenu/contextmenu.js')
+            add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
             if 'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm:
                 add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))

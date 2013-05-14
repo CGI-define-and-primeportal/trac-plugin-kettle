@@ -6,121 +6,111 @@
       xmlns:py="http://genshi.edgewall.org/">
   <xi:include href="layout.html" />	
   <head>
-    <script type="text/javascript">
-      jQuery(document).ready(function($) {
-      $("#content").find("h2").addAnchor(_("Link to this section"));
-
-      $(".results-table").each(function() {
-       $(this).find('tbody').load($(this).attr('data-url'));
-      });
-      $("#dialoggeturl").dialog({autoOpen:false, height:300,width:500, modal:true, title:"Report GET URL"});
-      $("#content .get_url").click(function(){
-         $("#dialoggeturl #geturlplaceholder").attr('href', this.href);
-         $("#dialoggeturl #geturlplaceholder").html(this.href);
-         $("#dialoggeturl").dialog('open');
-       return false;
-      });
-
-      $("#dialogupload").dialog({autoOpen:false, height:250,width:500, modal:true, title:"Upload Transformations"});
-      $("#uploadbutton").click(function(){
-         $("#dialogupload").dialog('open');
-       return false;
-      });
-
-      $("form").on('submit', function() {
-        $("#content").fadeTo('slow', 0.3);
-        // show some spinner?
-      });
-      })
-    </script>
     <title>Business Intelligence Transformations</title>
   </head>
-
   <body>
-    <h1>Available Transformations</h1>
-
-    <div id="dialoggeturl">
+    <div id="content" class="business-intelligence">
+      <h1>Business Intelligence Transformations</h1>
       <p>
-	To fetch this report result with another tool, provide this URL:
+        The page below allows you to generate numerous data transformations. 
+        Transforms can be used to both retrieve and manipulate data. To run a transform, simply click the
+        execute button, and wait for it to complete. Any new output will be automatically updated in the 
+        file archive snippet below. You can also download any report automatically without adding it to the files archive. 
+        To do this, select 'Download' from the Execute dropdown and wait for the transformation to load.
       </p>
-      <tt><a id="geturlplaceholder" href="#"></a></tt>
-      <p>
-	<ol>
-	  <li>Visit the <a href="${req.href.admin('access','serviceaccounts')}">Admin/Service Accounts</a> area to set up a new Service Account.</li>
-	  <li>Ask <a href="mailto:${project.admin}">${project.admin}</a> to provide your new account the <tt>BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE</tt> permission. Be sure to mention your #define project name.</li>
-	  <li>Set the above URL into your other tool</li>
-	</ol>
-      </p>
-      <p>
-	You can also generate reports using the XMLRPC or JSON-RPC API, see 
-	<a href="${req.href.rpc()+'#rpc.businessintelligence'}">the documentation at <tt>/rpc</tt></a>.
-      </p>
-    </div>
-
-    <div py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm" id="dialogupload">
-      <py:if test="'TRAC_ADMIN' in req.perm">
-	<p>
-	  To upload transformations, copy them to this path on the server:
-	</p>
-	<tt>${env.path + "/transformation-templates"}</tt>
-	<p>
-	  Create a new folder for a new transformation, or replace files
-	  in existing transformation folders.
-	</p>
-      </py:if>
-      <py:if test="'TRAC_ADMIN' not in req.perm">
-	To request new jobs or transformations (collectively known as
-	'reports'), or to ask for automated scheduling of existing
-	jobs or transformations, please contact 
-	<a href="mailto:${project.admin}">${project.admin}</a>.
-      </py:if>
-    </div>
-
-    <div id="content">
+      <div id="dialoggeturl" class="hidden">
+        <p>To fetch this report result with another tool, provide this URL:</p>
+        <code><a id="geturlplaceholder" href="#"></a></code>
+        <p>
+          <ol>
+            <li>
+              Visit the 
+              <a href="${req.href.admin('access','serviceaccounts')}">Admin/Service Accounts</a>
+              area to set up a new Service Account.</li>
+            <li>
+              Ask <a href="mailto:${project.admin}">${project.admin}</a> to provide your new account the 
+              <code>BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE</code> permission. 
+              Be sure to mention your #define project name.
+            </li>
+            <li>Set the above URL into your other tool</li>
+          </ol>
+        </p>
+        <p>
+          You can also generate reports using the XMLRPC or JSON-RPC API, see 
+          <a href="${req.href.rpc()+'#rpc.businessintelligence'}">the documentation at <code>/rpc</code></a>.
+        </p>
+      </div>
+      <div py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm" id="dialogupload" class="hidden">
+        <py:if test="'TRAC_ADMIN' in req.perm">
+          <p>To upload transformations, copy them to this path on the server:</p>
+          <code>${env.path + "/transformation-templates"}</code>
+          <p>
+            Create a new folder for a new transformation,
+            or replace files in existing transformation folders.
+          </p>
+        </py:if>
+        <py:if test="'TRAC_ADMIN' not in req.perm">
+          To request new jobs or transformations (collectively known as
+          'reports'), or to ask for automated scheduling of existing
+          jobs or transformations, please contact 
+          <a href="mailto:${project.admin}">${project.admin}</a>.
+        </py:if>
+      </div>
       <p py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' not in req.perm">
-	To request new jobs or transformations (collectively known as
-	'reports'), or to ask for automated scheduling of existing
-	jobs or transformations, please contact 
-	<a href="mailto:${project.admin}">${project.admin}</a>.
+        To request new jobs or transformations (collectively known as
+        'reports'), or to ask for automated scheduling of existing
+        jobs or transformations, please contact 
+        <a href="mailto:${project.admin}">${project.admin}</a>.
       </p>
-      <div py:for="transform, details in transformations.items()">
-	<h2 id="${transform}">${details.name}</h2>
-	<h3>${transform} (${details.version})</h3>
-	<p>${details.description}</p>
-	<form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm"
-	      method="post"
-	      action="${req.href.businessintelligence()}">
-	  <input type="hidden" name="transform" value="${transform}"/>
-	  <button type="submit" name="action" value="execute">Execute</button>
-	  <button type="submit" name="action" value="execute_async">Execute in Background</button>
-	  <button type="submit" name="action" value="execute_download">Execute and Download</button>
-	</form>
-	<a class="get_url" href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
-	  Show integration URL
-	</a>
-	<br/>
-	<a href="${req.href.browser('define-reports', transform)}">
-	  Visit in File Archive
-	</a>
-	
-	<table class="results-table rounded full-width border-header condensed"
-	       data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
-	  <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
-	       and also the contextmenu plugin doesn't insert the empty first th for the checkboxes !-->
-	  <thead>
-	    <tr>
-	      <th>&nbsp;</th>
-	      <th>Name</th>
-	      <th>Size</th>
-	      <th>Rev</th>
-	      <th>Age</th>
-	      <th>Author</th>
-	      <th>Last Change</th>
-	    </tr>
-	  </thead>
-	  <tbody>
-	  </tbody>
-	</table>
+      <form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm"
+            id="exec-form" method="post" action="${req.href.businessintelligence()}" class="hidden">
+          <input id="exec-transform" type="hidden" name="transform" value=""/>
+          <input id="exec-action" type="hidden" name="action" value="" />
+      </form>
+      <div class="transforms-list">
+        <div py:for="transform, details in transformations.items()" class="transformation">
+          <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
+          <span class="full-name">${transform} (${details.version})</span>
+          <p>${details.description}</p>
+          <div class="execute-actions btn-group" data-transform="${transform}">
+            <a data-action="execute" data-transform="${transform}" class="btn btn-mini btn-success group-label">
+              <i class="icon-bolt"></i> Execute
+            </a>
+            <a class="btn btn-mini btn-success dropdown-toggle">
+              <span class="caret"></span>
+            </a>
+            <ul class="styled-dropdown create">
+              <li><a data-action="execute"><i class="icon-rocket"></i> Now</a></li>
+              <li><a data-action="execute_download"><i class="icon-cloud-download"></i> Download</a></li>
+            </ul>
+          </div>
+          <a class="btn btn-mini btn-primary get_url" 
+             href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
+            <i class="icon-globe"></i> Integration URL
+          </a>
+          <a class="btn btn-mini btn-primary" href="${req.href.browser('define-reports', transform)}">
+            <i class="icon-file"></i> View in Archive
+          </a>
+          <table class="results-table rounded full-width border-header condensed"
+                 data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
+            <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
+                 and also the contextmenu plugin doesn't insert the empty first th for the checkboxes !-->
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="hidden-phone">Size</th>
+                <th class="hidden-phone">Rev</th>
+                <th>Age</th>
+                <th class="last-phone">Author</th>
+                <th class="hidden-phone">Last Change</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+          <table class="hidden" id="ajax-results">
+          </table>
+        </div>
       </div>
     </div>
   </body>
