@@ -11,7 +11,8 @@
   <body>
     <div id="content" class="business-intelligence">
       <h1>Business Intelligence Transformations</h1>
-      <p>
+      <p class="about-business-intelligence visible-desktop">
+	<span class="icon-cog"/>
         The page below allows you to generate numerous data transformations. 
         Transforms can be used to both retrieve and manipulate data. To run a transform, simply click the
         execute button, and wait for it to complete. Any new output will be automatically updated in the 
@@ -70,8 +71,9 @@
       <div class="transforms-list">
         <div py:for="transform, details in transformations.items()" class="transformation">
           <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
-          <span class="full-name">${transform} (${details.version})</span>
-          <p>${details.description}</p>
+          <span class="full-name visible-desktop">${transform} (${details.version})</span>
+          <p class="visible-desktop">${details.description}</p>
+	  <br/>
           <div class="execute-actions btn-group" data-transform="${transform}">
             <a data-action="execute" data-transform="${transform}" class="btn btn-mini btn-success group-label">
               <i class="icon-bolt"></i> Execute
