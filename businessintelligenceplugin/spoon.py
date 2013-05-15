@@ -41,6 +41,5 @@ class SpoonExecutor(Component):
         spoon.wait()
 
     def _do_jndi(self):
-        write_simple_jndi_properties(DatabaseManager(self.env).connection_uri,
-                                     os.path.expanduser("~/.pentaho"))
+        write_simple_jndi_properties(self.env, os.path.expanduser("~/.pentaho"))
 
