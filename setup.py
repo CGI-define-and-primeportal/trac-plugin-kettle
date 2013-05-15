@@ -15,7 +15,7 @@ setup(
     packages = ['businessintelligenceplugin'],
     package_data={
         'businessintelligenceplugin': [
-            'htdocs/*',
+            'htdocs/js/*.js',
             'templates/*',
             'default-transformation-templates/*/*',
             'pentaho-data-integration/*.sh',
