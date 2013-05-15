@@ -72,6 +72,10 @@ $(document).ready(function() {
         });
       }
       else {
+        setTimeout(function() {
+          $(".btn", execute_btn_handler).removeClass("disabled");
+          group_label.html("<i class='icon-bolt'></i> Execute");
+        }, 30000);
         $("#exec-form").submit();
       }
     }
