@@ -166,6 +166,7 @@ class TransformExecutor(Component):
         params = {'DefineInternal.Project.ShortName': os.path.split(self.env.path)[1]}
 
         args = [
+            "/bin/sh",
             executable,
             "-file", self._list_transformation_files()[transformation]['full_path'],
             "-level", "Detailed",
@@ -180,7 +181,7 @@ class TransformExecutor(Component):
         # http://stackoverflow.com/questions/6809590/merging-a-python-scripts-subprocess-stdout-and-stderr-while-keeping-them-disti
         # http://codereview.stackexchange.com/questions/6567/how-to-redirect-a-subprocesses-output-stdout-and-stderr-to-logging-module
         pan = subprocess.Popen(args, 
-                               executable=executable,
+                               executable="/bin/sh",
                                cwd=os.path.join(tempdir, "svn"),
                                env={'PENTAHO_DI_JAVA_OPTIONS': "-Dnet.sf.ehcache.skipUpdateCheck=true -Djava.awt.headless=true -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi")},
                                stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
