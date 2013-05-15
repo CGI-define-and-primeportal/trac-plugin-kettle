@@ -41,11 +41,11 @@ $(document).ready(function() {
   loadExecutions();
   execution_interval = setInterval(function() { if(!executions_loading) loadExecutions(); }, 5000);
 
-  $("#dialoggeturl").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
+  $("#bi-integration-url-dialog").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
   $("#content .get_url").click(function(){
-    $("#dialoggeturl #geturlplaceholder").attr('href', this.href);
-    $("#dialoggeturl #geturlplaceholder").html(this.href);
-    $("#dialoggeturl").dialog('open');
+    $("#bi-integration-url-placeholder").attr('href', this.href);
+    $("#bi-integration-url-placeholder").html(this.href);
+    $("#bi-integration-url-dialog").dialog('open');
     return false;
   });
 
