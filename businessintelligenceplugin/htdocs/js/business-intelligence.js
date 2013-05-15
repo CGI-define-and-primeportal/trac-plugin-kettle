@@ -39,7 +39,7 @@ $(document).ready(function() {
   };
 
   loadExecutions();
-  execution_interval = setInterval(function() { if(!executions_loading) loadExecutions(); }, 5000);
+  execution_interval = setInterval(function() { if(!executions_loading) loadExecutions(); }, 20000);
 
   $("#bi-integration-url-dialog").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
   $("#content .get_url").click(function(){
