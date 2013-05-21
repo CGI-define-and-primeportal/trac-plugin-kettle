@@ -40,6 +40,8 @@ class SpoonExecutor(Component):
 
         spoon.wait()
 
+        shutil.rmtree(tempdir)
+
     def _do_jndi(self):
         write_simple_jndi_properties(self.env, os.path.expanduser("~/.pentaho"))
 
