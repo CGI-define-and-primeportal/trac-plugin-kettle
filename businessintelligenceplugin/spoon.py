@@ -37,7 +37,6 @@ class SpoonExecutor(Component):
                                  executable="/bin/sh",
                                  cwd=resource_filename(__name__, 'pentaho-data-integration'),
                                  env={'PENTAHO_DI_JAVA_OPTIONS': "-Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
-                                      'KETTLE_HOME': os.path.join(tempdir,"kettle"),
                                       'DISPLAY': os.environ['DISPLAY']})
 
         spoon.wait()
