@@ -183,7 +183,8 @@ class TransformExecutor(Component):
         pan = subprocess.Popen(args, 
                                executable="/bin/sh",
                                cwd=os.path.join(tempdir, "svn"),
-                               env={'PENTAHO_DI_JAVA_OPTIONS': "-Dnet.sf.ehcache.skipUpdateCheck=true -Djava.awt.headless=true -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi")},
+                               env={'PENTAHO_DI_JAVA_OPTIONS': "-Dnet.sf.ehcache.skipUpdateCheck=true -Djava.awt.headless=true -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
+                                    'KETTLE_HOME': os.path.join(tempdir,"kettle")},
                                stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                                
         while pan.poll() is None:
