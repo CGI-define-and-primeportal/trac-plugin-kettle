@@ -4,6 +4,7 @@ from trac.core import Component, implements
 import os
 import tempfile
 import subprocess
+import shutil
 
 from pkg_resources import resource_filename
 
