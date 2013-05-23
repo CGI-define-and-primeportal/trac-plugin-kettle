@@ -22,6 +22,8 @@ setup(
             'pentaho-data-integration/launcher/*.jar',
             'pentaho-data-integration/launcher/*.properties',
             'pentaho-data-integration/launcher/*.xml',
+            'pentaho-data-integration/pwd/*.pwd',
+            'pentaho-data-integration/pwd/*.xml',
             'pentaho-data-integration/lib/*.jar',
             'pentaho-data-integration/libswt/*.jar',
             'pentaho-data-integration/libswt/linux/x86/*.jar',
@@ -51,6 +53,7 @@ setup(
         'trac.plugins': [
             'businessintelligenceplugin.transforms = businessintelligenceplugin.transforms',
             'businessintelligenceplugin.spoon = businessintelligenceplugin.spoon',
+            'businessintelligenceplugin.carte = businessintelligenceplugin.carte',
         ]
     }
 )
