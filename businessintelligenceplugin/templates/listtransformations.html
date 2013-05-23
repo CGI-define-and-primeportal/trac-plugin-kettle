@@ -12,7 +12,7 @@
     <div id="content" class="business-intelligence">
       <h1>Business Intelligence Transformations</h1>
       <p class="about-business-intelligence visible-desktop">
-	<span class="icon-info-sign"/>
+        <i class="icon-info-sign"></i>
         The page below allows you to generate numerous data transformations. 
         Transforms can be used to both retrieve and manipulate data. To run a transform, simply click the
         execute button, and wait for it to complete. Any new output will be automatically updated in the 
@@ -68,30 +68,31 @@
           <input id="exec-action" type="hidden" name="action" value="" />
       </form>
       <div class="transforms-list">
-        <div py:for="transform, details in transformations.items()" class="transformation">
+        <div py:for="transform, details in transformations.items()" class="transformation" id="transform-${transform}">
           <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
           <span class="full-name visible-desktop">${transform} (${details.version})</span>
           <p class="visible-desktop">${details.description}</p>
-	  <br/>
-          <div class="execute-actions btn-group" data-transform="${transform}">
-            <a data-action="execute" data-transform="${transform}" class="btn btn-mini btn-success group-label">
-              <i class="icon-bolt"></i> Execute
+          <div>
+            <div class="execute-actions btn-group" data-transform="${transform}">
+              <a data-action="execute_async" class="btn btn-mini btn-success group-label">
+                <i class="icon-bolt"></i> Execute
+              </a>
+              <a class="btn btn-mini btn-success dropdown-toggle">
+                <span class="caret"></span>
+              </a>
+              <ul class="styled-dropdown create">
+                <li><a data-action="execute_async"><i class="icon-upload"></i> Store to File Archive</a></li>
+                <li><a data-action="execute_download"><i class="icon-cloud-download"></i> Download</a></li>
+              </ul>
+            </div>
+            <a class="btn btn-mini btn-primary get_url" 
+               href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
+              <i class="icon-globe"></i> Integration URL
             </a>
-            <a class="btn btn-mini btn-success dropdown-toggle">
-              <span class="caret"></span>
+            <a class="btn btn-mini btn-primary" href="${req.href.browser('define-reports', transform)}">
+              <i class="icon-file"></i> View in Archive
             </a>
-            <ul class="styled-dropdown create">
-              <li><a data-action="execute"><i class="icon-upload"></i> Store to File Archive</a></li>
-              <li><a data-action="execute_download"><i class="icon-cloud-download"></i> Download</a></li>
-            </ul>
           </div>
-          <a class="btn btn-mini btn-primary get_url" 
-             href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
-            <i class="icon-globe"></i> Integration URL
-          </a>
-          <a class="btn btn-mini btn-primary" href="${req.href.browser('define-reports', transform)}">
-            <i class="icon-file"></i> View in Archive
-          </a>
           <table class="results-table rounded full-width border-header condensed"
                  data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
             <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
@@ -109,9 +110,8 @@
             <tbody>
             </tbody>
           </table>
-          <table class="hidden" id="ajax-results">
-          </table>
         </div>
+        <table class="hidden" id="ajax-results"></table>
       </div>
     </div>
   </body>
