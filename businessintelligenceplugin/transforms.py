@@ -194,7 +194,9 @@ class TransformExecutor(Component):
                                stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                                
         while pan.poll() is None:
-            self.log.debug("Pan output: %s", pan.stdout.readline())
+            # this can go to the database later (natively, by pdi)
+            # keeping here, as info level for now.
+            self.log.info("Pan output: %s", pan.stdout.readline())
         self.log.info("Pan returned %s" % pan.returncode)
 
         if pan.returncode:
