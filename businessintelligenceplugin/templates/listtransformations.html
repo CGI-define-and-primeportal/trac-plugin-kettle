@@ -53,8 +53,7 @@
         <py:if test="'TRAC_ADMIN' not in req.perm">
           To request new jobs or transformations (collectively known as
           'reports'), or to ask for automated scheduling of existing
-          jobs or transformations, please contact 
-          <a href="mailto:${project.admin}">${project.admin}</a>.
+          jobs or transformations, please ${email_service_desk}.
         </py:if>
       </div>
       <p py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' not in req.perm">
