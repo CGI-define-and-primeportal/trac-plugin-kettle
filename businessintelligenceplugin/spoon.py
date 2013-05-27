@@ -4,6 +4,7 @@ from trac.core import Component, implements
 import os
 import tempfile
 import subprocess
+import shutil
 
 from pkg_resources import resource_filename
 
@@ -39,6 +40,8 @@ class SpoonExecutor(Component):
                                       'DISPLAY': os.environ['DISPLAY']})
 
         spoon.wait()
+
+        shutil.rmtree(tempdir)
 
     def _do_jndi(self):
         write_simple_jndi_properties(self.env, os.path.expanduser("~/.pentaho"))
