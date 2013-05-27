@@ -81,8 +81,8 @@ class TransformExecutor(Component):
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
-            if 'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm:
-                add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="icon-calendar"), ' Schedule Transformations', id="schedulebutton"))
 
             return "listtransformations.html", data, None
 

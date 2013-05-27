@@ -9,7 +9,7 @@ $(document).ready(function() {
     var results_tables = specific_elem ? $("table", specific_elem) : $(".results-table");
     $(results_tables).each(function(i) {
       var table = $(this);
-      var result_url = table.attr("data-url") + "?_=" + (new Date().getTime());
+      var result_url = table.attr("data-url");
       // Load table's contents from URL
       $.ajax({
         url: result_url,
@@ -72,9 +72,14 @@ $(document).ready(function() {
     return false;
   });
 
-  $("#dialogupload").dialog({autoOpen:false, width:500, modal:true, title:"Upload Transformations"});
+  $("#dialogupload").dialog({autoOpen:false, width:400, modal:true, title:"Upload Transformations"});
   $("#uploadbutton").click(function(){
     $("#dialogupload").dialog('open');
+    return false;
+  });
+  $("#dialogschedule").dialog({autoOpen:false, width:400, modal:true, title:"Schedule Transformations"});
+  $("#schedulebutton").click(function(){
+    $("#dialogschedule").dialog('open');
     return false;
   });
   // Execution event
@@ -96,7 +101,7 @@ $(document).ready(function() {
       // If our request is not to async
       if($("#exec-action").val() != "execute_download") {
         $("#exec-form").ajaxSubmit({
-          url: $("#exec-form").attr("action") + "?_=" + (new Date().getTime()),
+          url: $("#exec-form").attr("action"),
           success: function() {
             throttledUpdates(transform_wrapper);
           }
