@@ -1842,7 +1842,7 @@ ORDER BY id;
         <name>id</name>
         <element/>
         <type>Integer</type>
-        <format/>
+        <format>#</format>
         <currency/>
         <decimal/>
         <group/>
