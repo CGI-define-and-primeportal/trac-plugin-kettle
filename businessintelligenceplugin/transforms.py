@@ -63,11 +63,17 @@ class TransformExecutor(Component):
                 self._do_execute_transformation(req.args['transform'])
             else:
                 add_warning(req, "No valid action found")
-                req.redirect(req.href.businessintelligence())                
-            if 'returnto' in req.args:
-                req.redirect(req.args['returnto'])
-            else:
                 req.redirect(req.href.businessintelligence())
+            if req.get_header('X-Requested-With') == 'XMLHttpRequest':
+                req.send_response(200)
+                req.send_header('Content-Length', 0)
+                req.end_headers()
+                return
+            else:
+                if 'returnto' in req.args:
+                    req.redirect(req.args['returnto'])
+                else:
+                    req.redirect(req.href.businessintelligence())
         else:
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_LIST")
             data = {'transformations': self._list_transformation_files()}
@@ -75,8 +81,8 @@ class TransformExecutor(Component):
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
-            if 'BUSINESSINTELLIGENCE_TRANSFORMATION_UPLOAD' in req.perm:
-                add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="icon-calendar"), ' Schedule Transformations', id="schedulebutton"))
 
             return "listtransformations.html", data, None
 
