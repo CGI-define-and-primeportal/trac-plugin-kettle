@@ -77,7 +77,6 @@ class TransformExecutor(Component):
         else:
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_LIST")
             data = {'transformations': self._list_transformation_files()}
-            add_stylesheet(req, 'contextmenu/contextmenu.css')
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
