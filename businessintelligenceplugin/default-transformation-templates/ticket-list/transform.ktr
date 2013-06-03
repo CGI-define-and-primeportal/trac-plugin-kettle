@@ -1870,7 +1870,7 @@ ORDER BY id;
         <name>time</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -1954,7 +1954,7 @@ ORDER BY id;
         <name>changetime</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2038,7 +2038,7 @@ ORDER BY id;
         <name>resolutiontime</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2430,7 +2430,7 @@ ORDER BY id;
         <name>assigned</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2458,7 +2458,7 @@ ORDER BY id;
         <name>accepted</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2486,7 +2486,7 @@ ORDER BY id;
         <name>review</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2514,7 +2514,7 @@ ORDER BY id;
         <name>testing</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2542,7 +2542,7 @@ ORDER BY id;
         <name>integration</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2570,7 +2570,7 @@ ORDER BY id;
         <name>closed</name>
         <element/>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
@@ -2598,7 +2598,7 @@ ORDER BY id;
         <name>time</name>
         <element>new</element>
         <type>Date</type>
-        <format/>
+        <format>yyyy-MM-dd HH:mm:ss</format>
         <currency/>
         <decimal/>
         <group/>
