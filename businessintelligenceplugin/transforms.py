@@ -117,7 +117,8 @@ class TransformExecutor(Component):
                 print " ", k, v
 
     def _do_execute(self, transformation):
-        print "Generated revisions %s" % self._do_execute_transformation(transformation)
+        # change to a safe CWD (as subversion commit hooks will want to "chdir(.)" before they execute
+        print "Generated revisions %s" % self._do_execute_transformation(transformation, changecwd=True)
 
     # IXMLRPCHandler methods
     def xmlrpc_namespace(self):
@@ -158,8 +159,10 @@ class TransformExecutor(Component):
 
     #####
 
-    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False):
+    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False):
         tempdir = tempfile.mkdtemp()
+        if changecwd:
+            os.chdir(tempdir)
         os.mkdir(os.path.join(tempdir, "svn"))
 
         write_simple_jndi_properties(self.env, tempdir)
