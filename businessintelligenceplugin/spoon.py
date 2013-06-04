@@ -15,21 +15,19 @@ class SpoonExecutor(Component):
 
     # IAdminCommandProvider methods
     def get_admin_commands(self):
-        yield ('businessintelligence spoon', '',
-               """Start spoon
+        yield ('businessintelligence spoon', '[connection-uri] [ip]',
+               """Start spoon. To connect to a different project's data, supply a connection-uri (same form as trac.ini has it). To override the hostname from that connection-uri, you can supply an IP address. This is useful to connect over an ssh tunnel to a remote database.
                """,
-               self._complete_transformation_list, self._do_spoon)
-        yield ('businessintelligence simple-jndi', '',
-               """Write a JDNI properties file to "$HOME/.pentaho/simple-jndi". This is useful before starting report-designer/report-designer.sh
+               None, self._do_spoon)
+        yield ('businessintelligence simple-jndi', '[connection-uri] [ip]',
+               """Write a JDNI properties file to "$HOME/.pentaho/simple-jndi". This is useful before starting report-designer/report-designer.sh, To connect to a different project's data, supply a connection-uri (same form as trac.ini has it). To override the hostname from that connection-uri, you can supply an IP address. This is useful to connect over an ssh tunnel to a remote database.
                """,
-               self._complete_transformation_list, self._do_jndi)
+               None, self._do_jndi)
 
-    def _complete_transformation_list(self, args):
-        pass
-
-    def _do_spoon(self):
+    def _do_spoon(self, connection_uri=None, ip=None):
         tempdir = tempfile.mkdtemp()
-        write_simple_jndi_properties(self.env, tempdir)
+
+        write_simple_jndi_properties(self.env, tempdir, connection_uri, ip)
 
         # execute transform 
 
@@ -43,6 +41,7 @@ class SpoonExecutor(Component):
 
         shutil.rmtree(tempdir)
 
-    def _do_jndi(self):
-        write_simple_jndi_properties(self.env, os.path.expanduser("~/.pentaho"))
+    def _do_jndi(self, connection_uri=None, ip=None):
+        write_simple_jndi_properties(self.env, os.path.expanduser("~/.pentaho"),
+                                     connection_uri, ip)
 
