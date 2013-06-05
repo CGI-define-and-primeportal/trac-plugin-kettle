@@ -79,7 +79,7 @@
           <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
           <span class="full-name visible-desktop">${transform} (${details.version})</span>
           <p class="visible-desktop">${details.description}</p>
-          <p class="visible-desktop extended-description">${details.extended_description}</p>
+          <p py:if="details.extended_description.strip()" class="visible-desktop extended-description">${details.extended_description}</p>
           <div>
             <div class="execute-actions btn-group" data-transform="${transform}">
               <a data-action="execute_async" class="btn btn-mini btn-success group-label">
