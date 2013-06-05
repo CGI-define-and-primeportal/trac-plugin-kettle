@@ -65,7 +65,7 @@ $(document).ready(function() {
   }
 
   $("#bi-integration-url-dialog").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
-  $("#content .get_url").click(function(){
+  $("#content .get-url-btn").click(function(){
     $("#bi-integration-url-placeholder").attr('href', this.href);
     $("#bi-integration-url-placeholder").html(this.href);
     $("#bi-integration-url-dialog").dialog('open');
