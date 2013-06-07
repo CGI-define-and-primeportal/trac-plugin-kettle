@@ -9,7 +9,7 @@ $(document).ready(function() {
     var results_tables = specific_elem ? $("table", specific_elem) : $(".results-table");
     $(results_tables).each(function(i) {
       var table = $(this);
-      var result_url = table.attr("data-url");
+      var result_url = table.attr("data-url") + "?_=" + (new Date().getTime());
       // Load table's contents from URL
       $.ajax({
         url: result_url,
