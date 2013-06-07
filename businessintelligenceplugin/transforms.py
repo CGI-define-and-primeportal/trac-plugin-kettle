@@ -252,6 +252,7 @@ class TransformExecutor(Component):
             root = tree.getroot()
             d[ktr_name] = {'name': root.find('info/name').text,
                            'description': root.find('info/description').text,
+                           'extended_description': root.find('info/extended_description').text,
                            'version': root.find('info/trans_version').text,
                            'full_path': ktr}
         return d
