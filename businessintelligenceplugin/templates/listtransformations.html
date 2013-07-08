@@ -1,0 +1,127 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      xmlns:py="http://genshi.edgewall.org/">
+  <xi:include href="layout.html" />	
+  <head>
+    <title>Business Intelligence Transformations</title>
+  </head>
+  <body>
+    <div id="content" class="business-intelligence">
+      <h1>Business Intelligence Transformations</h1>
+      <p class="about-business-intelligence visible-desktop">
+        <i class="icon-info-sign"></i>
+        Transforms can both retrieve and manipulate tickets. To run a transform, click the
+        execute button, and wait for it to complete. Any new output will be automatically updated in the 
+        file archive. You can also download any report without adding it to the file archive by using <i>Download</i> from the <code>Execute</code> dropdown.
+	If the transformation creates more than one file, <i>Download</i> will download the first one.
+      </p>
+      <p class="visible-desktop">
+	You can keep a Subversion checkout of the area of the file archive which you can then 'update' when new reports are available.
+      </p>
+      <div id="bi-integration-url-dialog" class="hidden">
+        <p>To fetch this report result with another tool, provide this URL:</p>
+        <code><a id="bi-integration-url-placeholder" href="#"></a></code>
+        <p>
+          <ol>
+            <li>
+              Visit the 
+              <a href="${req.href.admin('access','serviceaccounts')}">Admin/Service Accounts</a>
+              area to set up a new Service Account.</li>
+            <li>
+              Ask <a href="mailto:${project.admin}">${project.admin}</a> to provide your new account the 
+              <code>BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE</code> permission. 
+              Be sure to mention your #define project name.
+            </li>
+            <li>Set the above URL into your other tool</li>
+          </ol>
+        </p>
+        <p>
+          You can also generate reports using the XMLRPC or JSON-RPC API, see 
+          <a href="${req.href.rpc()+'#rpc.businessintelligence'}">the documentation at <code>/rpc</code></a>.
+        </p>
+      </div>
+      <div id="dialogupload" class="hidden">
+        <py:if test="'TRAC_ADMIN' in req.perm">
+          <p>To upload transformations, copy them to this path on the server:</p>
+          <code>${env.path + "/transformation-templates"}</code>
+          <p>
+            Create a new folder for a new transformation,
+            or replace files in existing transformation folders.
+          </p>
+        </py:if>
+        <py:if test="'TRAC_ADMIN' not in req.perm">
+          To request new data transformations, please ${email_service_desk}.
+        </py:if>
+      </div>
+      <div id="dialogschedule" class="hidden">
+        <py:if test="'TRAC_ADMIN' in req.perm">
+          <p>To schedule transformations, place a cron job into
+	    <code>/etc/cron.d/define-${env.path.split("/")[-1]}</code>
+	    which executes 
+	    <code>/opt/define/bin/define-project-admin ${env.path} businessintelligence transformation execute <i>transform-name</i></code>
+          </p>
+        </py:if>
+        <py:if test="'TRAC_ADMIN' not in req.perm">
+          To ask for automated scheduling of existing transformations, please ${email_service_desk}.
+        </py:if>
+      </div>
+
+      <form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm"
+            id="exec-form" method="post" action="${req.href.businessintelligence()}" class="hidden">
+          <input id="exec-transform" type="hidden" name="transform" value=""/>
+          <input id="exec-action" type="hidden" name="action" value="" />
+      </form>
+      <div class="transforms-list">
+        <div py:for="transform, details in transformations.items()" class="transformation" id="transform-${transform}">
+          <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
+          <span class="full-name visible-desktop">${transform} (${details.version})</span>
+          <p class="visible-desktop">${details.description}</p>
+          <p py:if="details.extended_description and details.extended_description.strip()"
+             class="visible-desktop extended-description">${details.extended_description}</p>
+          <div>
+            <div class="execute-actions btn-group" data-transform="${transform}">
+              <a data-action="execute_async" class="btn btn-mini btn-success group-label">
+                <i class="icon-bolt"></i> Execute
+              </a>
+              <a class="btn btn-mini btn-success dropdown-toggle">
+                <span class="caret"></span>
+              </a>
+              <ul class="styled-dropdown create">
+                <li><a data-action="execute_async"><i class="icon-upload"></i> Store to File Archive</a></li>
+                <li><a data-action="execute_download"><i class="icon-cloud-download"></i> Download</a></li>
+              </ul>
+            </div>
+            <a class="btn btn-mini btn-primary get-url-btn" 
+               href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
+              <i class="icon-globe"></i> Integration URL
+            </a>
+            <a class="btn btn-mini btn-primary archive-view-btn" href="${req.href.browser('define-reports', transform)}">
+              <i class="icon-file"></i> View in Archive
+            </a>
+          </div>
+          <table class="results-table rounded full-width border-header condensed"
+                 data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
+            <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings
+                 and also the contextmenu plugin doesn't insert the empty first th for the checkboxes !-->
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="hidden-phone">Size</th>
+                <th class="hidden-phone">Rev</th>
+                <th>Age</th>
+                <th class="last-phone">Author</th>
+                <th class="hidden-phone">Last Change</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <table class="hidden" id="ajax-results"></table>
+      </div>
+    </div>
+  </body>
+</html>

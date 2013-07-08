@@ -1,0 +1,10 @@
+from org.pentaho.reporting.engine.classic.core.util import TypedTableModel
+import types
+
+columnNames = ["Item","Cost"]
+columnTypes = [types.StringType, types.IntType]
+
+model = TypedTableModel(columnNames, columnTypes)
+model.addRow(["Cat", 5])
+model.addRow(["Mouse", 1])
+return model
