@@ -97,6 +97,11 @@ for ticket_id, in ticket_ids:
                     active_changes['resolutiontime'] = time
         ticket_values.update(active_changes)
 
+        if not ticket_values['remaininghours']:
+            ticket_values['remaininghours'] = "0"
+        if not ticket_values['estimatedhours']:
+            ticket_values['estimatedhours'] = "0"
+
         execute_many_buffer.append(\
                   (history_date,) * 6 + \
                       (ticket_values['id'],
