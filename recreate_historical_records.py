@@ -15,7 +15,7 @@ built_in_fields = ('milestone',
                    'component',
                    'version')
 
-conn = psycopg2.connect("dbname=define_d4_db user=define_d4 password=... host=localhost port=15432")
+conn = psycopg2.connect("dbname=define_project1_db user=define_project1 password=.... host=localhost port=5432")
 ticket_ids = conn.cursor()
 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
 for ticket_id, in ticket_ids:
