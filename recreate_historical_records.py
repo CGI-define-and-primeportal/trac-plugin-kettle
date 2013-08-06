@@ -15,7 +15,7 @@ built_in_fields = ('milestone',
                    'component',
                    'version')
 
-conn = psycopg2.connect("dbname=define_d4_db user=define_d4 password=... host=localhost port=15432")
+conn = psycopg2.connect("dbname=define_project1_db user=define_project1 password=8afcf3130b03d7ebc53897990d7a0bce host=localhost port=5432")
 ticket_ids = conn.cursor()
 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
 for ticket_id, in ticket_ids:
@@ -96,6 +96,11 @@ for ticket_id, in ticket_ids:
                 if field == "resolution":
                     active_changes['resolutiontime'] = time
         ticket_values.update(active_changes)
+
+        if not ticket_values['remaininghours']: 
+            ticket_values['remaininghours'] = "0" 
+        if not ticket_values['estimatedhours']: 
+            ticket_values['estimatedhours'] = "0" 
 
         execute_many_buffer.append(\
                   (history_date,) * 6 + \
