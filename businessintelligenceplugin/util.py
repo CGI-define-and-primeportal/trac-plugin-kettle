@@ -34,4 +34,4 @@ def write_simple_jndi_properties(env, targetdir, connection_uri=None, ip=None):
     properties.write("projectdata/password=%s\n" % jdbcPassword)
     properties.close()
 
-    env.log.info("Written JNDI details to %s" % jndi_filename)
+    env.log.info("Written JNDI details to %s", jndi_filename)
