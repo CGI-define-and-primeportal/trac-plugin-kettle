@@ -35,7 +35,7 @@ class HistoryStorageSystem(Component):
             Column('status'),
             Column('resolution'),
             Column('keywords'),
-            Column('storypoints', type='double precision'),
+            Column('effort', type='double precision'),
             Column('estimatedhours', type='double precision'),
             Column('totalhours', type='double precision'),
             Column('remaininghours', type='double precision'),
