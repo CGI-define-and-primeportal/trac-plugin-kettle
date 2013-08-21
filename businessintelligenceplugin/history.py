@@ -15,12 +15,13 @@ class HistoryStorageSystem(Component):
                IAdminCommandProvider)
 
     # IEnvironmentSetupParticipant
-    _schema_version = 1
+    _schema_version = 2
     schema = [
         # Ticket changesets
         Table('ticket_bi_historical')[
             Column('_snapshottime', type='date'),
             Column('_resolutiontime', type='timestamp with time zone'),
+            Column('isclosed'),
             Column('id', type='int64'),
             Column('type'),
             Column('time', type='timestamp with time zone'),
@@ -49,12 +50,16 @@ class HistoryStorageSystem(Component):
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
         cursor.execute("select value from system where name = 'bi_history_schema'")
-        if not cursor.fetchone():
-            self.log.debug("Upgrade of schema needed for businessintelligence plugin for history table")
+        row = cursor.fetchone()
+        if not row:
+            self.log.debug("Initial schema needed for businessintelligence plugin for history table")
             return True
         else:
-            return False
-        
+            if row[0] < self._schema_version:
+                self.log.debug("Upgrade schema needed for businessintelligence plugin for history table")
+                return True
+        return False
+
     def upgrade_environment(self, db):
         self.log.debug("Upgrading schema for bi history plugin")
         
@@ -221,6 +226,12 @@ class HistoryStorageSystem(Component):
                             active_changes['changetime'] = time
                             if field == "resolution":
                                 active_changes['_resolutiontime'] = time
+                            # Currently calculating is_closed in the burndown plugin - will change this
+                            # in next commit
+                            '''if field == 'status':
+                                # work out if the new status is in a statusgroup with the attr closed='True'
+                                active_changes['isclosed'] = True
+                                pass'''
 
                     ticket_values.update(active_changes)
 
