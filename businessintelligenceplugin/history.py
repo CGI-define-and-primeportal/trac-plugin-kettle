@@ -7,6 +7,7 @@ import psycopg2
 import datetime
 import types
 from trac.util.datefmt import from_utimestamp, to_utimestamp, utc, utcmax
+from logicaordertracker.controller import LogicaOrderController
 
 class HistoryStorageSystem(Component):
     """trac-admin command provider for ticketchangesets plugin."""
@@ -125,6 +126,10 @@ class HistoryStorageSystem(Component):
                 water_mark = None
                 print "No previous runs"
 
+            # Get statuses we consider to be closed for each ticket type
+            controller = LogicaOrderController(self.env)
+            closed_statuses = controller.type_and_statuses_for_closed_statusgroups()
+
             ticket_ids_cursor = db.cursor()
             ticket_ids_cursor.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
             for ticket_id, in ticket_ids_cursor:
@@ -193,6 +198,9 @@ class HistoryStorageSystem(Component):
                     ticket_values['time'] = ticket_created
                     ticket_values['changetime'] = ticket_created
                     ticket_values['_resolutiontime'] = None
+                    # assumption that you cannot create a ticket in status closed
+                    # so we give isclosed a false value from the off
+                    ticket_values['isclosed'] = 'false'
 
                     # PROBLEM: How can we detect when a milestone was renamed (and
                     # tickets updated) - this isn't mentioned in the ticket_change
@@ -226,12 +234,12 @@ class HistoryStorageSystem(Component):
                             active_changes['changetime'] = time
                             if field == "resolution":
                                 active_changes['_resolutiontime'] = time
-                            # Currently calculating is_closed in the burndown plugin - will change this
-                            # in next commit
-                            '''if field == 'status':
-                                # work out if the new status is in a statusgroup with the attr closed='True'
-                                active_changes['isclosed'] = True
-                                pass'''
+                            # work out if the new status is in a statusgroup with the attr closed='True'
+                            if field == 'status':
+                                if newvalue in closed_statuses[ticket_values['type']]:
+                                    active_changes['isclosed'] = 'true'
+                                else:
+                                    active_changes['isclosed'] = 'false'
 
                     ticket_values.update(active_changes)
 
@@ -259,4 +267,3 @@ class HistoryStorageSystem(Component):
                         ",".join(db.quote(c.name) for c in self.schema[0].columns),
                         ",".join(["%s"] * len(self.schema[0].columns))),
                               execute_many_buffer)
-
