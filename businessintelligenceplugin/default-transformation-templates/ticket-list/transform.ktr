@@ -3,7 +3,7 @@
   <info>
     <name>Export all tickets to Excel and XML</name>
     <description>Create Excel spreadsheet and XML document with basic details for all tickets. This includes all tickets - so if you have your project configured to only expose certain tickets to certain people, be aware this report result will include all tickets.</description>
-    <extended_description>This report currently works best for the define-default workflow as it contains columns specifically for the status names used in that workflow. You can contact servicedesk@logica.com to arrange a custom report which is designed for your workflow. In a future version of #define, these columns will be dynamically generated to take into account your workflow automatically, including any custom fields configured for your project.
+    <extended_description>This report currently works best for the define-default workflow as it contains columns specifically for the status names used in that workflow. You can contact servicedesk@cgi.com to arrange a custom report which is designed for your workflow. In a future version of #define, these columns will be dynamically generated to take into account your workflow automatically, including any custom fields configured for your project.
 </extended_description>
     <trans_version>1.0</trans_version>
     <trans_type>Normal</trans_type>
