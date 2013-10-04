@@ -169,14 +169,20 @@ class TransformExecutor(Component):
 
         # execute transform 
 
-        executable = os.path.join(resource_filename(__name__, 'pentaho-data-integration'),"pan.sh")
 
         params = {'DefineInternal.Project.ShortName': os.path.split(self.env.path)[1]}
+
+        transform = self._list_transformation_files()[transformation]
+
+        scriptfilename = {'transformation': 'pan.sh',
+                          'job': 'kitchen.sh'}[transform['type']]
+
+        executable = os.path.join(resource_filename(__name__, 'pentaho-data-integration'), scriptfilename)
 
         args = [
             "/bin/sh",
             executable,
-            "-file", self._list_transformation_files()[transformation]['full_path'],
+            "-file", transform['full_path'],
             "-level", "Detailed",
             ]
         for k, v in params.items():
@@ -188,21 +194,21 @@ class TransformExecutor(Component):
 
         # http://stackoverflow.com/questions/6809590/merging-a-python-scripts-subprocess-stdout-and-stderr-while-keeping-them-disti
         # http://codereview.stackexchange.com/questions/6567/how-to-redirect-a-subprocesses-output-stdout-and-stderr-to-logging-module
-        pan = subprocess.Popen(args, 
+        script = subprocess.Popen(args, 
                                executable="/bin/sh",
                                cwd=os.path.join(tempdir, "svn"),
                                env={'PENTAHO_DI_JAVA_OPTIONS': "-Dnet.sf.ehcache.skipUpdateCheck=true -Djava.awt.headless=true -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
                                     'KETTLE_HOME': os.path.join(tempdir,"kettle")},
                                stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
                                
-        while pan.poll() is None:
+        while script.poll() is None:
             # this can go to the database later (natively, by pdi)
             # keeping here, as info level for now.
-            self.log.info("Pan output: %s", pan.stdout.readline())
-        self.log.info("Pan returned %s", pan.returncode)
+            self.log.info("Script output: %s", script.stdout.readline())
+        self.log.info("Script returned %s", script.returncode)
 
-        if pan.returncode:
-            raise RuntimeError("Business Intelligence subprocess pan failed")
+        if script.returncode:
+            raise RuntimeError("Business Intelligence subprocess script failed")
 
         if store:
             reponame, repos, path = RepositoryManager(self.env).get_repository_by_path('')
@@ -253,11 +259,40 @@ class TransformExecutor(Component):
             ktr_name = ktr.split(os.sep)[-2]
             tree = etree.parse(ktr)
             root = tree.getroot()
-            d[ktr_name] = {'name': root.find('info/name').text,
-                           'description': root.find('info/description').text,
-                           'extended_description': root.find('info/extended_description').text,
-                           'version': root.find('info/trans_version').text,
-                           'full_path': ktr}
+            try:
+                status = int(root.find('info/trans_status').text)
+            except Exception:
+                status = 0
+            if status > 0:
+                d[ktr_name] = {'name': root.find('info/name').text,
+                               'description': root.find('info/description').text,
+                               'extended_description': root.find('info/extended_description').text,
+                               'version': root.find('info/trans_version').text,
+                               'full_path': ktr,
+                               'type': 'transformation'}
+
+        for kjb in glob.glob(os.path.join(
+            os.path.join(self.env.path, 'job-templates'),
+            "*/*.kjb")) + \
+            glob.glob(os.path.join(
+                    resource_filename(__name__, 
+                                      'default-job-templates'),
+                    "*/*.kjb")):
+            # refer to the kjb by the final folder and job filename
+            kjb_name = kjb.split(os.sep)[-2]
+            tree = etree.parse(kjb)
+            root = tree.getroot()
+            try:
+                status = int(root.find('job_status').text)
+            except Exception:
+                status = 0
+            if status > 0:
+                d[kjb_name] = {'name': root.find('name').text,
+                               'description': root.find('description').text,
+                               'extended_description': root.find('extended_description').text,
+                               'version': root.find('job_version').text,
+                               'full_path': kjb,
+                               'type': 'job'}
         return d
 
 
