@@ -13,6 +13,7 @@ from genshi.builder import tag
 from trac_browser_svn_ops.svn_fs import SubversionWriter
 from contextmenu.contextmenu import ISourceBrowserContextMenuProvider
 
+import types
 import glob
 import os
 from lxml import etree
@@ -99,7 +100,7 @@ class TransformExecutor(Component):
                """List available transformations
                """,
                self._complete_transformation_list, self._do_list)
-        yield ('businessintelligence transformation execute', '<transformation>',
+        yield ('businessintelligence transformation execute', '<transformation> [ <param1 name> <param1 value> ] [ <param2 name> <param2 value> ]',
                """Execute a particular transformation
                """,
                self._complete_transformation_execute, self._do_execute)
@@ -115,11 +116,21 @@ class TransformExecutor(Component):
         for ktr, details in self._list_transformation_files(listall=listall).items():
             print ktr
             for k, v in details.items():
-                print " ", k, v
+                if isinstance(v, types.DictType):
+                    print " ", k
+                    for k, v in v.items():
+                        if "default_value" in v and "description" in v:
+                            print "  - %s; default: %s description: %s" % (k, repr(v['default_value']), v['description'])
+                        else:
+                            print "  - ", k, v
 
-    def _do_execute(self, transformation):
+                else:
+                    print " ", k, v
+
+    def _do_execute(self, transformation, *args):
         # change to a safe CWD (as subversion commit hooks will want to "chdir(.)" before they execute
-        print "Generated revisions %s" % self._do_execute_transformation(transformation, listall=True, changecwd=True)
+        parameters = dict(zip(args[::2], args[1::2]))
+        print "Generated revisions %s" % self._do_execute_transformation(transformation, listall=True, changecwd=True, parameters=parameters)
 
     # IXMLRPCHandler methods
     def xmlrpc_namespace(self):
@@ -160,7 +171,7 @@ class TransformExecutor(Component):
 
     #####
 
-    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False, listall=False):
+    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False, listall=False, parameters=None):
         tempdir = tempfile.mkdtemp()
         if changecwd:
             os.chdir(tempdir)
@@ -171,9 +182,11 @@ class TransformExecutor(Component):
         # execute transform 
 
 
-        params = {'DefineInternal.Project.ShortName': os.path.split(self.env.path)[1]}
+        if not parameters:
+            parameters = {}
+        parameters['DefineInternal.Project.ShortName'] = os.path.split(self.env.path)[1]
 
-        transform = self._list_transformation_files()[transformation]
+        transform = self._list_transformation_files(listall)[transformation]
 
         scriptfilename = {'transformation': 'pan.sh',
                           'job': 'kitchen.sh'}[transform['type']]
@@ -186,7 +199,9 @@ class TransformExecutor(Component):
             "-file", transform['full_path'],
             "-level", "Detailed",
             ]
-        for k, v in params.items():
+        for k, v in parameters.items():
+            if "=" in k:
+                raise ValueError("Unable to support = symbol in parameter key named %s" % k)
             args.append("-param:%s=%s" % (k, v))
 
         self.log.debug("Running %s with %s", executable, args)
@@ -275,6 +290,9 @@ class TransformExecutor(Component):
                                'full_path': ktr,
                                'type': 'transformation',
                                'status': statusstr[status]}
+                for i in root.findall('info/parameters/parameter'):
+                    d[ktr_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
+                                                                                    'description': i.find('description').text}
 
         for kjb in glob.glob(os.path.join(
             os.path.join(self.env.path, 'job-templates'),
@@ -299,6 +317,9 @@ class TransformExecutor(Component):
                                'full_path': kjb,
                                'status': statusstr[status],
                                'type': 'job'}
+                for i in root.findall('parameters/parameter'):
+                    d[kjb_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
+                                                                                    'description': i.find('description').text}
         return d
 
 
