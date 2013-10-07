@@ -76,7 +76,7 @@ class TransformExecutor(Component):
                     req.redirect(req.href.businessintelligence())
         else:
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_LIST")
-            data = {'transformations': self._list_transformation_files()}
+            data = {'transformations': self._list_transformation_files(listall=False)}
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
@@ -95,7 +95,7 @@ class TransformExecutor(Component):
 
     # IAdminCommandProvider methods
     def get_admin_commands(self):
-        yield ('businessintelligence transformation list', '',
+        yield ('businessintelligence transformation list', 'all',
                """List available transformations
                """,
                self._complete_transformation_list, self._do_list)
@@ -110,15 +110,16 @@ class TransformExecutor(Component):
     def _complete_transformation_execute(self, args):
         return self._list_transformation_files().keys()
     
-    def _do_list(self):
-        for ktr, details in self._list_transformation_files().items():
+    def _do_list(self, all=False):
+        listall = all and all == "all"
+        for ktr, details in self._list_transformation_files(listall=listall).items():
             print ktr
             for k, v in details.items():
                 print " ", k, v
 
     def _do_execute(self, transformation):
         # change to a safe CWD (as subversion commit hooks will want to "chdir(.)" before they execute
-        print "Generated revisions %s" % self._do_execute_transformation(transformation, changecwd=True)
+        print "Generated revisions %s" % self._do_execute_transformation(transformation, listall=True, changecwd=True)
 
     # IXMLRPCHandler methods
     def xmlrpc_namespace(self):
@@ -131,7 +132,7 @@ class TransformExecutor(Component):
         yield ("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE", ((Binary, str),), self.execute_transformation_download)
 
     def list_transformations(self, req):
-        return self._list_transformation_files()
+        return self._list_transformation_files(listall=False)
 
     def execute_transformation(self, req, transformation):
         """Executes transformation (generally to generate ticket report).
@@ -159,7 +160,7 @@ class TransformExecutor(Component):
 
     #####
 
-    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False):
+    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False, listall=False):
         tempdir = tempfile.mkdtemp()
         if changecwd:
             os.chdir(tempdir)
@@ -246,7 +247,10 @@ class TransformExecutor(Component):
         return returndata
 
     ### 
-    def _list_transformation_files(self):
+    def _list_transformation_files(self, listall=False):
+        statusstr = {0: "",
+                     1: "draft",
+                     2: "production"}
         d = dict()
         for ktr in glob.glob(os.path.join(
             os.path.join(self.env.path, 'transformation-templates'),
@@ -263,13 +267,14 @@ class TransformExecutor(Component):
                 status = int(root.find('info/trans_status').text)
             except Exception:
                 status = 0
-            if status > 0:
+            if listall or status > 0:
                 d[ktr_name] = {'name': root.find('info/name').text,
                                'description': root.find('info/description').text,
                                'extended_description': root.find('info/extended_description').text,
                                'version': root.find('info/trans_version').text,
                                'full_path': ktr,
-                               'type': 'transformation'}
+                               'type': 'transformation',
+                               'status': statusstr[status]}
 
         for kjb in glob.glob(os.path.join(
             os.path.join(self.env.path, 'job-templates'),
@@ -286,12 +291,13 @@ class TransformExecutor(Component):
                 status = int(root.find('job_status').text)
             except Exception:
                 status = 0
-            if status > 0:
+            if listall or status > 0:
                 d[kjb_name] = {'name': root.find('name').text,
                                'description': root.find('description').text,
                                'extended_description': root.find('extended_description').text,
                                'version': root.find('job_version').text,
                                'full_path': kjb,
+                               'status': statusstr[status],
                                'type': 'job'}
         return d
 
