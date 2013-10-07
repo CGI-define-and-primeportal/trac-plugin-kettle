@@ -6,17 +6,23 @@
       xmlns:py="http://genshi.edgewall.org/">
   <xi:include href="layout.html" />	
   <head>
-    <title>Business Intelligence Transformations</title>
+    <title>Business Intelligence</title>
   </head>
   <body>
     <div id="content" class="business-intelligence">
-      <h1>Business Intelligence Transformations</h1>
+      <h1>Business Intelligence</h1>
       <p class="about-business-intelligence visible-desktop">
-        <i class="icon-info-sign"></i>
-        Transforms can both retrieve and manipulate tickets. To run a transform, click the
-        execute button, and wait for it to complete. Any new output will be automatically updated in the 
-        file archive. You can also download any report without adding it to the file archive by using <i>Download</i> from the <code>Execute</code> dropdown.
-	If the transformation creates more than one file, <i>Download</i> will download the first one.
+        <i class="icon-info-sign"></i> Jobs and Transformations can
+        retrieve and manipulate tickets. To run a job or
+        transformations, click the execute button, and wait for it to
+        complete. Any new output will be automatically updated in the
+        file archive. You can also download any report without adding
+        it to the file archive by using <i>Download</i> from
+        the <code>Execute</code> dropdown.  If the job or
+        transformation creates more than one file, <i>Download</i>
+        will download the first one. <i>Jobs</i> can be configured to
+        email the results - please ${email_service_desk} to request
+        this.
       </p>
       <p class="visible-desktop">
 	You can keep a Subversion checkout of the area of the file archive which you can then 'update' when new reports are available.
@@ -47,25 +53,27 @@
         <py:if test="'TRAC_ADMIN' in req.perm">
           <p>To upload transformations, copy them to this path on the server:</p>
           <code>${env.path + "/transformation-templates"}</code>
+          <p>To upload jobs, copy them to this path on the server:</p>
+          <code>${env.path + "/job-templates"}</code>
           <p>
-            Create a new folder for a new transformation,
-            or replace files in existing transformation folders.
+            Create a new folder for a new job or transformation,
+            or replace files in existing folders.
           </p>
         </py:if>
         <py:if test="'TRAC_ADMIN' not in req.perm">
-          To request new data transformations, please ${email_service_desk}.
+          To request new jobs or data transformations, please ${email_service_desk}.
         </py:if>
       </div>
       <div id="dialogschedule" class="hidden">
         <py:if test="'TRAC_ADMIN' in req.perm">
-          <p>To schedule transformations, place a cron job into
+          <p>To schedule jobs or transformations, place a cron job into
 	    <code>/etc/cron.d/define-${env.path.split("/")[-1]}</code>
 	    which executes 
-	    <code>/opt/define/bin/define-project-admin ${env.path} businessintelligence transformation execute <i>transform-name</i></code>
+	    <code>/opt/define/bin/define-project-admin ${env.path} businessintelligence transformation execute <i>transform-or-job--name</i></code>
           </p>
         </py:if>
         <py:if test="'TRAC_ADMIN' not in req.perm">
-          To ask for automated scheduling of existing transformations, please ${email_service_desk}.
+          To ask for automated scheduling of existing jobs or transformations, please ${email_service_desk}.
         </py:if>
       </div>
 
@@ -77,14 +85,14 @@
       <div class="transforms-list">
         <div py:for="transform, details in transformations.items()" class="transformation" id="transform-${transform}">
           <h2 id="${transform}" class="inline-block no-spacing capitalize">${details.name}</h2>
-          <span class="full-name visible-desktop">${transform} (${details.version})</span>
+          <span class="full-name visible-desktop">${transform} (${details.type}, ${details.version})</span>
           <p class="visible-desktop">${details.description}</p>
           <p py:if="details.extended_description and details.extended_description.strip()"
              class="visible-desktop extended-description">${details.extended_description}</p>
           <div>
             <div class="execute-actions btn-group" data-transform="${transform}">
               <a data-action="execute_async" class="btn btn-mini btn-success group-label">
-                <i class="icon-bolt"></i> Execute
+                <i class="icon-bolt"></i> Execute ${details.type}
               </a>
               <a class="btn btn-mini btn-success dropdown-toggle">
                 <span class="caret"></span>
