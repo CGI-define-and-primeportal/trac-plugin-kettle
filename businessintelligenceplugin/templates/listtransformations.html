@@ -110,6 +110,16 @@
               <i class="icon-file"></i> View in Archive
             </a>
           </div>
+	  <div py:if="'parameters' in details">
+	    <h4 class="openparameters" style="cursor: pointer;"><i class="icon-resize-full"></i> Parameters</h4>
+	    <div class="parameters hidden">
+	      <div py:for="parameter, paramdetails in details['parameters'].items()">
+		<label>${paramdetails['description']}:</label>
+		<br/>
+		<input class="bi-parameter" type="text" name="parameter:${parameter}" width="20" value="${paramdetails['default_value']}" style="margin-left: 2em;"/>
+	      </div>
+	    </div>
+	  </div>
           <table class="results-table rounded full-width border-header condensed"
                  data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
             <!-- Avoid using dirlist_thead.html" because that tries to do hyperlinkable headings

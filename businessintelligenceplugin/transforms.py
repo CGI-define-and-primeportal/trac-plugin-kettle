@@ -2,7 +2,7 @@ from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
 from trac.versioncontrol.api import RepositoryManager, NoSuchNode
 from trac.perm import IPermissionRequestor
-from trac.web import IRequestHandler, RequestDone
+from trac.web import IRequestHandler, RequestDone, HTTPNotFound 
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav
 from trac.util import content_disposition
 
@@ -42,11 +42,19 @@ class TransformExecutor(Component):
 
     def process_request(self, req):
         if 'action' in req.args:
+            parameters = {}
+            for k in req.args:
+                if k.startswith("parameter:"):
+                    parameter_name = k.split(":",2)[1]
+                    parameter_value = req.args[k]
+                    parameters[parameter_name] = parameter_value
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE")
             if req.args['action'] == "execute_async":
-                thread.start_new_thread(self._do_execute_transformation, (req.args['transform'],))
+                thread.start_new_thread(self._do_execute_transformation, 
+                                        (req.args['transform'],), 
+                                        {'parameters': parameters})
             elif req.args['action'] == "execute_download":
-                filename, stat, filestream = self._do_execute_transformation(req.args['transform'], store=False, return_bytes_handle=True)
+                filename, stat, filestream = self._do_execute_transformation(req.args['transform'], store=False, return_bytes_handle=True, parameters=parameters)
                 req.send_response(200)
                 req.send_header('Content-Type', mimetypes.guess_type(filename)[0] or 'application/octet-stream')
                 req.send_header('Content-Length', stat.st_size)
@@ -61,7 +69,7 @@ class TransformExecutor(Component):
                 raise RequestDone
 
             elif req.args['action'] == "execute":
-                self._do_execute_transformation(req.args['transform'])
+                self._do_execute_transformation(req.args['transform'], parameters=parameters)
             else:
                 add_warning(req, "No valid action found")
                 req.redirect(req.href.businessintelligence())
@@ -182,11 +190,15 @@ class TransformExecutor(Component):
         # execute transform 
 
 
-        if not parameters:
+        transform = self._list_transformation_files(listall)[transformation]
+
+        if parameters:
+            for parameter in parameters:
+                if parameter not in transform['parameters']:
+                    raise KeyError("%s is not valid parameter" % parameter)
+        else:
             parameters = {}
         parameters['DefineInternal.Project.ShortName'] = os.path.split(self.env.path)[1]
-
-        transform = self._list_transformation_files(listall)[transformation]
 
         scriptfilename = {'transformation': 'pan.sh',
                           'job': 'kitchen.sh'}[transform['type']]
@@ -202,7 +214,7 @@ class TransformExecutor(Component):
         for k, v in parameters.items():
             if "=" in k:
                 raise ValueError("Unable to support = symbol in parameter key named %s" % k)
-            args.append("-param:%s=%s" % (k, v))
+            args.append("-param:%s=%s" % (k.encode('utf-8'), v.encode('utf-8')))
 
         self.log.debug("Running %s with %s", executable, args)
 
@@ -252,9 +264,13 @@ class TransformExecutor(Component):
                 revs.append(rev)
 
         if return_bytes_handle:
-            filename = sorted(os.listdir(os.path.join(tempdir,'svn')))[0]
-            fullpath = os.path.join(tempdir,'svn',filename)
-            returndata = filename, os.stat(fullpath), open(fullpath,'r')
+            try:
+                filename = sorted(os.listdir(os.path.join(tempdir,'svn')))[0]
+                fullpath = os.path.join(tempdir,'svn',filename)
+                returndata = filename, os.stat(fullpath), open(fullpath,'r')
+            except IndexError, e:
+                # probably didn't generate any files
+                raise HTTPNotFound("Operation did not create any output")
         else:
             returndata = revs
 
@@ -291,8 +307,9 @@ class TransformExecutor(Component):
                                'type': 'transformation',
                                'status': statusstr[status]}
                 for i in root.findall('info/parameters/parameter'):
-                    d[ktr_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
-                                                                                    'description': i.find('description').text}
+                    if not i.find('name').text.startswith("DefineInternal"):
+                        d[ktr_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
+                                                                                        'description': i.find('description').text}
 
         for kjb in glob.glob(os.path.join(
             os.path.join(self.env.path, 'job-templates'),
@@ -318,8 +335,9 @@ class TransformExecutor(Component):
                                'status': statusstr[status],
                                'type': 'job'}
                 for i in root.findall('parameters/parameter'):
-                    d[kjb_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
-                                                                                    'description': i.find('description').text}
+                    if not i.find('name').text.startswith("DefineInternal"):
+                        d[kjb_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
+                                                                                        'description': i.find('description').text}
         return d
 
 

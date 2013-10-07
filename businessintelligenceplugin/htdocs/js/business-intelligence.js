@@ -1,6 +1,11 @@
 $(document).ready(function() {
   $("#content").find("h2").addAnchor(_("Link to this section"));
 
+    $('.openparameters').click(function(e) {
+      $("i", this).toggleClass("icon-resize-full icon-resize-small");
+      $(this).closest('div').find("div.parameters").toggleClass("hidden");
+    });
+
   var executions = 0;
   var executions_loading = false;
   function loadExecutions(specific_elem) {
@@ -66,8 +71,9 @@ $(document).ready(function() {
 
   $("#bi-integration-url-dialog").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
   $("#content .get-url-btn").click(function(){
-    $("#bi-integration-url-placeholder").attr('href', this.href);
-    $("#bi-integration-url-placeholder").html(this.href);
+    example_url = this.href + "&" + $(this).parent().parent().find("input.bi-parameter").serialize();
+    $("#bi-integration-url-placeholder").attr('href', example_url);
+    $("#bi-integration-url-placeholder").text(example_url);
     $("#bi-integration-url-dialog").dialog('open');
     return false;
   });
@@ -93,7 +99,8 @@ $(document).ready(function() {
       // Set our form values given the execution request
       $("#exec-action").val($(this).attr("data-action"));
       $("#exec-transform").val(transform_name);
-
+      $("#exec-form input.bi-parameter").remove();
+      transform_wrapper.find("input.bi-parameter").clone().appendTo($("#exec-form"));
       // Change the button state to loading
       group_label.html("<i class='icon-spin icon-spinner'></i>");
       $(".btn", execute_btn_handler).addClass("disabled");
