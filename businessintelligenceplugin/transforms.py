@@ -363,7 +363,26 @@ class TransformContextMenu(Component):
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
                 return tag.a(tag.i(class_="icon-cog"),
-                             ' Regenerate with %s (default options)' % transform, 
+                             ' Regenerate with %s (default parameters)' % transform, 
                              href=req.href.businessintelligence(action='execute',
                                                                 transform=transform,
                                                                 returnto=req.href.browser(entry.path)))
+
+class TransformWithParametersContextMenu(Component):
+    implements(ISourceBrowserContextMenuProvider)
+    
+    # IContextMenuProvider methods
+    def get_order(self, req):
+        return 11
+
+    def get_draw_separator(self, req):
+        return True
+    
+    def get_content(self, req, entry, data):
+        if 'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm:
+            if entry.path.startswith("define-reports/"):
+                transform = entry.path.split("/")[1]
+                return tag.a(tag.i(class_="icon-cog"),
+                             ' Regenerate with %s (provide parameters)' % transform, 
+                             href=req.href.businessintelligence() + "#" + transform)
+            
