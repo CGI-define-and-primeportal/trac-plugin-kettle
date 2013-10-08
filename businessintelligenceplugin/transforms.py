@@ -363,7 +363,7 @@ class TransformContextMenu(Component):
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
                 return tag.a(tag.i(class_="icon-cog"),
-                             ' Regenerate with %s' % transform, 
+                             ' Regenerate with %s (default options)' % transform, 
                              href=req.href.businessintelligence(action='execute',
                                                                 transform=transform,
                                                                 returnto=req.href.browser(entry.path)))
