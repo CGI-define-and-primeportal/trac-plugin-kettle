@@ -1,10 +1,10 @@
 $(document).ready(function() {
   $("#content").find("h2").addAnchor(_("Link to this section"));
 
-    $('.openparameters').click(function(e) {
-      $("i", this).toggleClass("icon-resize-full icon-resize-small");
-      $(this).closest('div').find("div.parameters").toggleClass("hidden");
-    });
+  $('.toggle-parameters-form').click(function(e) {
+    $("i", this).toggleClass("icon-resize-full icon-resize-small");
+    $(this).parent().parent().find('.parameters-form').toggle('slow');
+  });
 
   var executions = 0;
   var executions_loading = false;

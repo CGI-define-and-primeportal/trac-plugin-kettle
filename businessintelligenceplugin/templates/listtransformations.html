@@ -102,6 +102,9 @@
                 <li><a data-action="execute_download" href="#"><i class="icon-cloud-download"></i> Download</a></li>
               </ul>
             </div>
+	    <a py:if="'parameters' in details" class="btn btn-mini btn-primary toggle-parameters-form">
+	      <i class="icon-resize-full"></i> Parameters
+	    </a>
             <a class="btn btn-mini btn-primary get-url-btn" 
                href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
               <i class="icon-globe"></i> Integration URL
@@ -110,15 +113,21 @@
               <i class="icon-file"></i> View in Archive
             </a>
           </div>
-	  <div py:if="'parameters' in details">
-	    <h4 class="openparameters" style="cursor: pointer;"><i class="icon-resize-full"></i> Parameters</h4>
-	    <div class="parameters hidden">
+	  <div class="parameters-form hidden">
+	    <fieldset py:if="'parameters' in details" 
+		      class="rounded"
+		      style="border:1px dotted gray; padding: 5px; display: inline;">
+	      <legend>Parameters</legend>
 	      <div py:for="parameter, paramdetails in details['parameters'].items()">
-		<label>${paramdetails['description']}:</label>
+		<label>${paramdetails['description'] or parameter}:</label>
 		<br/>
-		<input class="bi-parameter" type="text" name="parameter:${parameter}" size="20" value="${paramdetails['default_value']}" style="margin-left: 2em;"/>
+		<input class="bi-parameter" type="text" name="parameter:${parameter}" size="30" value="${paramdetails['default_value']}" style="margin-left: 2em;"/>
 	      </div>
-	    </div>
+	      <p style="font-size: 70%;">The default parameters 
+	      are stored in the transformation or job file. Values
+	      entered here are used once, when you press
+	      'Execute'.</p>
+	    </fieldset>
 	  </div>
           <table class="results-table rounded full-width border-header condensed"
                  data-url="${req.href.browser('define-reports', transform.split('/')[0])}">
