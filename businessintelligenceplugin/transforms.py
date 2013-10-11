@@ -299,7 +299,7 @@ class TransformExecutor(Component):
                     "*/*.ktr")):
             # refer to the ktr by the final folder and transformation filename
             ktr_name = ktr.split(os.sep)[-2]
-            tree = etree.parse(ktr)
+            tree = etree.parse(ktr, parser=etree.XMLParser())
             root = tree.getroot()
             try:
                 status = int(root.find('info/trans_status').text)
