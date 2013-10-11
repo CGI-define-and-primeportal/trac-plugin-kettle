@@ -327,7 +327,7 @@ class TransformExecutor(Component):
                     "*/*.kjb")):
             # refer to the kjb by the final folder and job filename
             kjb_name = kjb.split(os.sep)[-2]
-            tree = etree.parse(kjb)
+            tree = etree.parse(kjb, parser=etree.XMLParser())
             root = tree.getroot()
             try:
                 status = int(root.find('job_status').text)
