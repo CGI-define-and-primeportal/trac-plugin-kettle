@@ -83,6 +83,9 @@ class HistoryStorageSystem(Component):
         yield ('businessintelligence history capture', '[until YYYY-MM-DD]',
                """Catch up history capture tables""",
                None, self.capture)
+        yield ('businessintelligence history clear', '[force]',
+               """Clear up history capture tables - deletes data""",
+               None, self.clear)
                
                
     # Internal methods
@@ -267,3 +270,14 @@ class HistoryStorageSystem(Component):
                         ",".join(db.quote(c.name) for c in self.schema[0].columns),
                         ",".join(["%s"] * len(self.schema[0].columns))),
                               execute_many_buffer)
+
+    def clear(self, force=False):
+        if force != "force":
+            print "Will only actually clear if 'force' is passed as additional argument"
+            return 
+
+        @with_transaction(self.env)
+        def _clear(db):
+            cursor = db.cursor()
+            cursor.execute("DELETE from ticket_bi_historical")
+
