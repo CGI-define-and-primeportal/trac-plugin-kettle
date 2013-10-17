@@ -80,8 +80,10 @@ class HistoryStorageSystem(Component):
     # IAdminCommandProvider methods
     
     def get_admin_commands(self):
-        yield ('businessintelligence history capture', '[until YYYY-MM-DD] [ticket number]',
-               """Catch up history capture tables""",
+        yield ('businessintelligence history capture', '[YYYY-MM-DD] [ticket number]',
+               """Catch up history capture tables. 
+Optional argument to stop at YYYY-MM-DD. 
+Can then also be limited to just one ticket for debugging purposes, but will not function properly if used again with a different ticket number.""",
                None, self.capture)
         yield ('businessintelligence history clear', '[force]',
                """Clear up history capture tables - deletes data""",
