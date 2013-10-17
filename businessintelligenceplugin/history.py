@@ -80,7 +80,7 @@ class HistoryStorageSystem(Component):
     # IAdminCommandProvider methods
     
     def get_admin_commands(self):
-        yield ('businessintelligence history capture', '[until YYYY-MM-DD]',
+        yield ('businessintelligence history capture', '[until YYYY-MM-DD] [ticket number]',
                """Catch up history capture tables""",
                None, self.capture)
         yield ('businessintelligence history clear', '[force]',
@@ -90,7 +90,7 @@ class HistoryStorageSystem(Component):
                
     # Internal methods
     
-    def capture(self, until_str=None):
+    def capture(self, until_str=None, only_ticket=None):
 
         if not until_str:
             until = datetime.date.today() - datetime.timedelta(days = 1)
@@ -133,9 +133,12 @@ class HistoryStorageSystem(Component):
             controller = LogicaOrderController(self.env)
             closed_statuses = controller.type_and_statuses_for_closed_statusgroups()
 
-            ticket_ids_cursor = db.cursor()
-            ticket_ids_cursor.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
-            for ticket_id, in ticket_ids_cursor:
+            if only_ticket:
+                ticket_ids = [(int(only_ticket),)]
+            else:
+                ticket_ids = db.cursor()
+                ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
+            for ticket_id, in ticket_ids:
                 print "Working on %s to %s for ticket %d" % (water_mark, until, ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
