@@ -6,7 +6,7 @@ from trac.ticket.api import TicketSystem
 import psycopg2
 import datetime
 import types
-from trac.util.datefmt import from_utimestamp, to_utimestamp, utc, utcmax
+from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
 from logicaordertracker.controller import LogicaOrderController
 
 class HistoryStorageSystem(Component):
@@ -177,7 +177,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     ticket_values['id'] = ticket_id
 
                 else:
-                    # initial values will be from the very first information we have about this ticket
+                    # first seen changes will be from the very first information we have about this ticket
                     c = db.cursor()
                     c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
                     ticket_created = from_utimestamp(c.fetchone()[0])
@@ -185,16 +185,39 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                     # find original values for the ticket
                     for column in ticket_values.keys():
-                        c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s and field = %s ORDER BY time LIMIT 1",  
+                        if column in ("totalhours", ):
+                            # these are never in the ticket_change table, they are in ticket_time table but we can anyway assume they started without a value
+                            ticket_values[column] = ''
+                            continue
+                        c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
                                   (ticket_id, column))
                         result = c.fetchone()
                         if result is None:
                             # column has never changed
-                            if column in built_in_fields:
+                            if column in ("remaininghours",):
+                                # could have changed via ticket_time table, so current value isn't necessarily the first value
+                                # so we'll count back to guess what it was
+                                c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'", 
+                                          (ticket_id,))
+                                current_remaininghours = c.fetchone()
+                                c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE ticket = %s", (ticket_id,))
+                                total_tickethours = c.fetchone()
+                                if current_remaininghours and total_tickethours:
+                                    if total_tickethours[0] == None:
+                                        total_tickethours = (0,)
+                                    result = [str(float(current_remaininghours[0]) + total_tickethours[0]/3600.0)]
+                                else:
+                                    # ok, maybe guess that estimatedhours has never changed so was the first remaininghours
+                                    # although I expect this won't be run - 
+                                    c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = 'estimatedhours'", 
+                                          (ticket_id,))
+                                    result = c.fetchone()
+                            elif column in built_in_fields:
                                 c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
+                                result = c.fetchone()
                             else:
                                 c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
-                            result = c.fetchone()
+                                result = c.fetchone()
                             if result:
                                 ticket_values[column] = result[0]
                             else:
@@ -220,7 +243,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 ticket_changes = []
                 # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
-                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) and time > %%s and time <= %%s ORDER BY time" % (
+                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time > %%s AND time <= %%s ORDER BY time" % (
                         ",".join(["'%s'" % k for k in ticket_values.keys()]),),
                           (ticket_id,
                            to_utimestamp(datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))),
@@ -228,12 +251,27 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 for result in c:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
+                # now we'll also get the changes from the ticket_time table
+                # we could use http://www.postgresql.org/docs/current/static/tutorial-window.html
+                # but I'll calculate the running totals in Python for now so it's DB agnostic
+                totalhours = float(ticket_values['totalhours']) if ticket_values['totalhours'].strip() else 0
+                remaininghours = float(ticket_values['remaininghours']) if ticket_values['remaininghours'].strip() else 0
+                c.execute("SELECT time_started, seconds_worked FROM ticket_time WHERE ticket = %s AND time_started > %s AND time_started <= %s ORDER BY time_started", 
+                          (ticket_id,
+                           to_timestamp(datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))),
+                           to_timestamp(datetime.datetime.combine(until, datetime.time(tzinfo=utc)))))
+                for result in c:
+                    totalhours = totalhours + result[1]/3600.0
+                    remaininghours = max(0,remaininghours - result[1]/3600.0)
+                    ticket_changes.append((datetime.datetime.fromtimestamp(result[0], tz=utc), "totalhours", totalhours))
+                    ticket_changes.append((datetime.datetime.fromtimestamp(result[0], tz=utc), "remaininghours", remaininghours))
+                
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
                 execute_many_buffer = []
                 while history_date <= until:
                     active_changes = {}
-                    for time, field, newvalue in ticket_changes:
+                    for time, field, newvalue in sorted(ticket_changes):
                         history_time = datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))
                         if time <= history_time:
                             # finding the newest change for each field, which is older than or equal to history_date
