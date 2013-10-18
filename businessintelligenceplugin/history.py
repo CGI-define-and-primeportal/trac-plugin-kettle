@@ -16,13 +16,13 @@ class HistoryStorageSystem(Component):
                IAdminCommandProvider)
 
     # IEnvironmentSetupParticipant
-    _schema_version = 2
+    _schema_version = 3
     schema = [
         # Ticket changesets
         Table('ticket_bi_historical')[
             Column('_snapshottime', type='date'), # UTC, END of the day
             Column('_resolutiontime', type='timestamp with time zone'),
-            Column('isclosed'),
+            Column('isclosed', type='int'),
             Column('id', type='int64'),
             Column('type'),
             Column('time', type='timestamp with time zone'),
@@ -42,22 +42,32 @@ class HistoryStorageSystem(Component):
             Column('totalhours', type='double precision'),
             Column('remaininghours', type='double precision'),
             Index(['_snapshottime']),
+            Index(['_snapshottime','milestone','isclosed']),
             ]
         ]
     
     def environment_created(self):
         self.upgrade_environment(self.env.get_db_cnx())
 
-    def environment_needs_upgrade(self, db):
+    def _check_schema_version(self, db):
         cursor = db.cursor()
         cursor.execute("select value from system where name = 'bi_history_schema'")
         row = cursor.fetchone()
-        if not row:
+        if row:
+            return int(row[0])
+        else:
+            return None
+
+    def environment_needs_upgrade(self, db):
+        found_version = self._check_schema_version(db)
+        if not found_version:
             self.log.debug("Initial schema needed for businessintelligence plugin for history table")
             return True
         else:
-            if row[0] < self._schema_version:
-                self.log.debug("Upgrade schema needed for businessintelligence plugin for history table")
+            if found_version < self._schema_version:
+                self.log.debug("Upgrade schema from %d to %d needed for businessintelligence plugin for history table",
+                               found_version,
+                               self._schema_version)
                 return True
         return False
 
@@ -67,14 +77,27 @@ class HistoryStorageSystem(Component):
         cursor = db.cursor()
         db_connector, _ = DatabaseManager(self.env).get_connector()
         
-        # Create tables
-        for table in self.schema:
-            for statement in db_connector.to_sql(table):
-                cursor.execute(statement)
+        found_version = self._check_schema_version(db)
+        if not found_version:
+            # Create tables
+            for table in self.schema:
+                for statement in db_connector.to_sql(table):
+                    cursor.execute(statement)
+
+            # system values are strings
+            cursor.execute("INSERT INTO system (name, value) VALUES ('bi_history_schema',%s)", 
+                           (str(self._schema_version),))
+
+        elif found_version == 2:
+            # We've not released anywhere yet, so this seems more practical 
+            # than writing a database-agnostic way to convert the isclosed column
+            cursor.execute("DROP table ticket_bi_historical")
+            for table in self.schema:
+                for statement in db_connector.to_sql(table):
+                    cursor.execute(statement)
+            cursor.execute("UPDATE system SET value = %s WHERE name = 'bi_history_schema'", 
+                           (str(self._schema_version),))
         
-        # system values are strings
-        cursor.execute("INSERT INTO system (name, value) VALUES ('bi_history_schema',%s)", 
-                       (str(self._schema_version),))
 
 
     # IAdminCommandProvider methods
@@ -243,7 +266,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     ticket_values['_resolutiontime'] = None
                     # assumption that you cannot create a ticket in status closed
                     # so we give isclosed a false value from the off
-                    ticket_values['isclosed'] = 'false'
+                    ticket_values['isclosed'] = 0
 
                     # PROBLEM: How can we detect when a milestone was renamed (and
                     # tickets updated) - this isn't mentioned in the ticket_change
@@ -295,9 +318,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             # work out if the new status is in a statusgroup with the attr closed='True'
                             if field == 'status':
                                 if newvalue in closed_statuses[ticket_values['type']]:
-                                    active_changes['isclosed'] = 'true'
+                                    active_changes['isclosed'] = 1
                                 else:
-                                    active_changes['isclosed'] = 'false'
+                                    active_changes['isclosed'] = 0
 
                     ticket_values.update(active_changes)
 
