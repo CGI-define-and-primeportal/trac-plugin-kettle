@@ -10,7 +10,7 @@ from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc,
 from logicaordertracker.controller import LogicaOrderController
 
 class HistoryStorageSystem(Component):
-    """trac-admin command provider for ticketchangesets plugin."""
+    """trac-admin command provider for business intelligence plugin."""
 
     implements(IEnvironmentSetupParticipant,
                IAdminCommandProvider)
@@ -148,6 +148,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if field.get('datatype','float') in ('float', 'integer'):
                 empty_means_zero.append(field['name'])
 
+
         @with_transaction(self.env)
         def _capture(db):
             water_mark_cursor = db.cursor()
@@ -220,34 +221,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                     # find original values for the ticket
                     for column in ticket_values.keys():
-                        if column in ("totalhours", ):
-                            # these are never in the ticket_change table, they are in ticket_time table but we can anyway assume they started without a value
-                            ticket_values[column] = ''
-                            continue
                         c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
                                   (ticket_id, column))
                         result = c.fetchone()
                         if result is None:
-                            # column has never changed
-                            if column in ("remaininghours",):
-                                # could have changed via ticket_time table, so current value isn't necessarily the first value
-                                # so we'll count back to guess what it was
-                                c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'", 
-                                          (ticket_id,))
-                                current_remaininghours = c.fetchone()
-                                c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE ticket = %s", (ticket_id,))
-                                total_tickethours = c.fetchone()
-                                if current_remaininghours and total_tickethours:
-                                    if total_tickethours[0] == None:
-                                        total_tickethours = (0,)
-                                    result = [str(float(current_remaininghours[0]) + total_tickethours[0]/3600.0)]
-                                else:
-                                    # ok, maybe guess that estimatedhours has never changed so was the first remaininghours
-                                    # although I expect this won't be run - 
-                                    c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = 'estimatedhours'", 
-                                          (ticket_id,))
-                                    result = c.fetchone()
-                            elif column in built_in_fields:
+                            if column in built_in_fields:
                                 c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
                                 result = c.fetchone()
                             else:
@@ -286,28 +264,92 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 for result in c:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
-                # now we'll also get the changes from the ticket_time table
-                # we could use http://www.postgresql.org/docs/current/static/tutorial-window.html
-                # but I'll calculate the running totals in Python for now so it's DB agnostic
-                totalhours = float(ticket_values['totalhours']) if ticket_values['totalhours'].strip() else 0
-                remaininghours = float(ticket_values['remaininghours']) if ticket_values['remaininghours'].strip() else 0
-                c.execute("SELECT time_started, seconds_worked FROM ticket_time WHERE ticket = %s AND time_started >= %s AND time_started < %s ORDER BY time_started", 
-                          (ticket_id,
-                           to_timestamp(startofday(history_date)),
-                           to_timestamp(startofnextday(until))))
-                for result in c:
-                    totalhours = totalhours + result[1]/3600.0
-                    remaininghours = max(0,remaininghours - result[1]/3600.0)
-                    ticket_changes.append((datetime.datetime.fromtimestamp(result[0], tz=utc), "totalhours", totalhours))
-                    ticket_changes.append((datetime.datetime.fromtimestamp(result[0], tz=utc), "remaininghours", remaininghours))
-                
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
-                execute_many_buffer = []
+                def _calculate_totalhours_on_date(date):
+                    c.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
+                              (ticket_values['id'],
+                               to_timestamp(startofnextday(history_date))))
+                    result = c.fetchone()
+                    return result[0] if result else 0
 
+                def _calculate_remaininghours_on_date(date):
+                    # find the closest absolute value
+                    c.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
+                              "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
+                              (ticket_values['id'],
+                               to_utimestamp(startofnextday(date))))
+                    next_known = c.fetchone()
+                    c.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
+                              "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
+                              (ticket_values['id'],
+                               to_utimestamp(startofnextday(date))))
+                    previous_known = c.fetchone()
+                    c.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
+                              (ticket_values['id'],))
+                    currently = c.fetchone()
+                    #print "----", date
+                    #print next_known
+                    #print previous_known
+                    #print currently
+                    candidates = [(currently[0] - startofnextday(date), currently[0], float(currently[1]))]
+                    if next_known:
+                        candidates.append((next_known[0] - startofnextday(date), next_known[0], float(next_known[1])))
+                    if previous_known:
+                        candidates.append((startofnextday(date) - previous_known[0], previous_known[0], float(previous_known[1])))
+                    best_candidate = sorted(candidates)[0]
+                    #print best_candidate[0], best_candidate
+
+                    # in these comments, "today" and "current" is
+                    # 'date' variable passed in above:
+
+                    # extra heuristic - if we know it's going to be 0,
+                    # and that's the first value we know at all,
+                    # probably it should be 0 right now (as the hours
+                    # plugin wouldn't let it go negative
+                    if best_candidate[2] == 0 and not previous_known:
+                        return 0
+
+                    if startofnextday(date) < best_candidate[1]:
+                        # we've found evidence of what it was at a
+                        # future date, so sum up the time spent
+                        # between now and then. As that time would be
+                        # subtracting from 'remaininghours', then add
+                        # it back to find the current 'remaininghours'
+                        
+                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                                  "ticket = %s AND time_started >= %s AND time_started < %s",
+                                  (ticket_values['id'],
+                                   to_timestamp(startofnextday(date)),
+                                   to_timestamp(best_candidate[1])))
+                        result = c.fetchone()
+                        if result and result[0]:
+                            return best_candidate[2] + (result[0]/3600.0)
+                        else:
+                            return best_candidate[2]
+                    else:
+                        # we've found evidence of what it was in the
+                        # past, so sum up time spent between then and
+                        # now. As that time would be reducing
+                        # 'remaininghours', we'll do that same
+                        # reduction to find the value for today
+                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                                  "ticket = %s AND time_started >= %s AND time_started < %s",
+                                  (ticket_values['id'],
+                                   to_timestamp(best_candidate[1]),
+                                   to_timestamp(startofnextday(date))))
+                        result = c.fetchone()
+                        if result and result[0]:
+                            return best_candidate[2] - (result[0]/3600.0)
+                        else:
+                            return best_candidate[2]
+
+                    return 0
+
+                execute_many_buffer = []
                 while history_date <= until:
                     active_changes = {}
-                    for time, field, newvalue in sorted(ticket_changes):
+                    for time, field, newvalue in ticket_changes:
                         if time < startofnextday(history_date):
                             # finding the newest change for each field, which is older than or equal to history_date
                             #print "Setting %s to %s" % (field, newvalue)
@@ -323,6 +365,14 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                     active_changes['isclosed'] = 0
 
                     ticket_values.update(active_changes)
+                    # these are pretty hard to calculate,
+                    # remaininghours especially as we don't have all
+                    # the values it could have taken recorded. We have
+                    # some known data-points, and some known
+                    # delta-points, but we don't know for sure (for
+                    # example) the value when the ticket was new.
+                    ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
+                    ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
                     for k in ticket_values:
                         if k in empty_means_zero and not ticket_values[k]:
