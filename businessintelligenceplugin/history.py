@@ -20,7 +20,7 @@ class HistoryStorageSystem(Component):
     schema = [
         # Ticket changesets
         Table('ticket_bi_historical')[
-            Column('_snapshottime', type='date'),
+            Column('_snapshottime', type='date'), # UTC, END of the day
             Column('_resolutiontime', type='timestamp with time zone'),
             Column('isclosed'),
             Column('id', type='int64'),
@@ -82,7 +82,8 @@ class HistoryStorageSystem(Component):
     def get_admin_commands(self):
         yield ('businessintelligence history capture', '[YYYY-MM-DD] [ticket number]',
                """Catch up history capture tables. 
-Optional argument to stop at YYYY-MM-DD. 
+Run data capture up to end of yesterday, UTC.
+Optional argument to collect date until end of YYYY-MM-DD.
 Can then also be limited to just one ticket for debugging purposes, but will not function properly if used again with a different ticket number.""",
                None, self.capture)
         yield ('businessintelligence history clear', '[force]',
@@ -94,10 +95,20 @@ Can then also be limited to just one ticket for debugging purposes, but will not
     
     def capture(self, until_str=None, only_ticket=None):
 
+        yesterday = datetime.date.today() - datetime.timedelta(days = 1)
         if not until_str:
-            until = datetime.date.today() - datetime.timedelta(days = 1)
+            until = yesterday
         else:
             until = datetime.datetime.strptime(until_str, "%Y-%m-%d").date()
+            if until > yesterday:
+                raise ValueError("Can't process any newer than %s" % yesterday)
+
+        def startofday(date):
+            return datetime.datetime.combine(date, datetime.time(tzinfo=utc)) if date else None
+
+        def startofnextday(date):
+            return datetime.datetime.combine(date + datetime.timedelta(days = 1),
+                                             datetime.time(tzinfo=utc)) if date else None
 
         ts = TicketSystem(self.env)
         custom_fields = []
@@ -141,7 +152,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = db.cursor()
                 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
             for ticket_id, in ticket_ids:
-                print "Working on %s to %s for ticket %d" % (water_mark, until, ticket_id)
+                print "Working on %s to %s (stopping before %s) for ticket %d" % (water_mark,
+                                                                                  until,
+                                                                                  startofnextday(until),
+                                                                                  ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = {}
@@ -151,17 +165,15 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 
                 # populate the "initial" values
                 if water_mark:
-                    # initial values will be from the most-recent snapshot of the ticket
                     history_date = water_mark
-
                     c = db.cursor()
                     columns = ticket_values.keys()
                     c.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
-                              (ticket_id, history_date))
+                              (ticket_id, water_mark))
 
                     values = c.fetchone()
                     if not values:
-                        print "No historical data for ticket %s on %s?" % (ticket_id, history_date)
+                        print "No historical data for ticket %s on %s?" % (ticket_id, water_mark)
                         continue
 
                     ticket_values.update(dict(zip(columns, values)))
@@ -243,11 +255,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 ticket_changes = []
                 # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
-                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time > %%s AND time <= %%s ORDER BY time" % (
+                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
                         ",".join(["'%s'" % k for k in ticket_values.keys()]),),
                           (ticket_id,
-                           to_utimestamp(datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))),
-                           to_utimestamp(datetime.datetime.combine(until, datetime.time(tzinfo=utc)))))
+                           to_utimestamp(startofday(history_date)),
+                           to_utimestamp(startofnextday(until))))
                 for result in c:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
@@ -256,10 +268,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # but I'll calculate the running totals in Python for now so it's DB agnostic
                 totalhours = float(ticket_values['totalhours']) if ticket_values['totalhours'].strip() else 0
                 remaininghours = float(ticket_values['remaininghours']) if ticket_values['remaininghours'].strip() else 0
-                c.execute("SELECT time_started, seconds_worked FROM ticket_time WHERE ticket = %s AND time_started > %s AND time_started <= %s ORDER BY time_started", 
+                c.execute("SELECT time_started, seconds_worked FROM ticket_time WHERE ticket = %s AND time_started >= %s AND time_started < %s ORDER BY time_started", 
                           (ticket_id,
-                           to_timestamp(datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))),
-                           to_timestamp(datetime.datetime.combine(until, datetime.time(tzinfo=utc)))))
+                           to_timestamp(startofday(history_date)),
+                           to_timestamp(startofnextday(until))))
                 for result in c:
                     totalhours = totalhours + result[1]/3600.0
                     remaininghours = max(0,remaininghours - result[1]/3600.0)
@@ -269,11 +281,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
                 execute_many_buffer = []
+
                 while history_date <= until:
                     active_changes = {}
                     for time, field, newvalue in sorted(ticket_changes):
-                        history_time = datetime.datetime.combine(history_date, datetime.time(tzinfo=utc))
-                        if time <= history_time:
+                        if time < startofnextday(history_date):
                             # finding the newest change for each field, which is older than or equal to history_date
                             #print "Setting %s to %s" % (field, newvalue)
                             active_changes[field] = newvalue
