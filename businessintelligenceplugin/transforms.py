@@ -26,6 +26,7 @@ import mimetypes
 from pkg_resources import resource_filename
 
 from businessintelligenceplugin.util import write_simple_jndi_properties
+from zipfile import ZipFile
 
 class TransformExecutor(Component):
     implements(IAdminCommandProvider,
@@ -272,9 +273,27 @@ class TransformExecutor(Component):
 
         if return_bytes_handle:
             try:
-                filename = sorted(os.listdir(os.path.join(tempdir,'svn')))[0]
-                fullpath = os.path.join(tempdir,'svn',filename)
-                returndata = filename, os.stat(fullpath), open(fullpath,'r')
+                src = os.path.abspath(os.path.join(tempdir,'svn'))
+                files = sorted(os.listdir(src))
+
+                if len(files) == 1 :
+                    filename = sorted(os.listdir(src))[0]
+                    fullpath = os.path.join(src,filename)
+                    returndata = filename, os.stat(fullpath), open(fullpath,'r')
+                #if more then one file make a zip archive
+                elif len(files) > 1:
+                    output_filename = transform['name'].replace(" ", "_") + '-archive.zip'
+                    output_path = os.path.abspath(os.path.join(src,output_filename))
+                    z= ZipFile(output_path, 'w')
+                    for dirname, dirs, files in os.walk(src):
+                        for f in files:
+                            if not output_filename in f:
+                                absname = os.path.abspath(os.path.join(dirname, f))
+                                arcname = absname[len(src) + 1:]
+                                z.write(absname,arcname)
+                    z.close()
+                    returndata = output_filename, os.stat(output_path), open(output_path,'r')
+
             except IndexError, e:
                 # probably didn't generate any files
                 raise HTTPNotFound("Operation did not create any output")
