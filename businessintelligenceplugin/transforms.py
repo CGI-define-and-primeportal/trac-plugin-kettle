@@ -277,14 +277,14 @@ class TransformExecutor(Component):
                 files = sorted(os.listdir(src))
 
                 if len(files) == 1 :
-                    filename = sorted(os.listdir(src))[0]
+                    filename = files[0]
                     fullpath = os.path.join(src,filename)
                     returndata = filename, os.stat(fullpath), open(fullpath,'r')
                 #if more then one file make a zip archive
                 elif len(files) > 1:
-                    output_filename = transform['name'].replace(" ", "_") + '-archive.zip'
+                    output_filename = transform['name'].replace(" ", "-") + '-archive.zip'
                     output_path = os.path.abspath(os.path.join(src,output_filename))
-                    z= ZipFile(output_path, 'w')
+                    z = ZipFile(output_path, 'w')
                     for dirname, dirs, files in os.walk(src):
                         for f in files:
                             if not output_filename in f:
