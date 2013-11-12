@@ -137,6 +137,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         custom_fields = []
         empty_means_zero = []
         built_in_fields = []
+        # history table column names which are not fields from the ticket system
+        history_columns = ['isclosed']
         for field in ts.fields:
             if 'custom' in field:
                 custom_fields.append(field['name'])
@@ -189,9 +191,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 
                 # populate the "initial" values
                 if water_mark:
-                    history_date = water_mark
+                    history_date = water_mark + datetime.timedelta(days=1)
                     c = db.cursor()
-                    columns = ticket_values.keys()
+                    # we add ticket fields and history columns otherwise 
+                    # we don't get previous values such as isclosed
+                    columns = ticket_values.keys() + history_columns
                     c.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
                               (ticket_id, water_mark))
 
