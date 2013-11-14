@@ -153,6 +153,52 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
         @with_transaction(self.env)
         def _capture(db):
+
+            def ticket_not_in_history_table():
+                # first seen changes will be from the very first information we have about this ticket
+                c = db.cursor()
+                c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
+                ticket_created = from_utimestamp(c.fetchone()[0])
+                history_date = ticket_created.date()
+
+                # find original values for the ticket
+                for column in ticket_values.keys():
+                    c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
+                              (ticket_id, column))
+                    result = c.fetchone()
+                    if result is None:
+                        if column in built_in_fields:
+                            c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
+                            result = c.fetchone()
+                        else:
+                            c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
+                            result = c.fetchone()
+                        if result:
+                            ticket_values[column] = result[0]
+                        else:
+                            ticket_values[column] = None
+                    else:
+                        ticket_values[column] = result[0]
+
+                ticket_values['id'] = ticket_id
+                ticket_values['time'] = ticket_created
+                ticket_values['changetime'] = ticket_created
+                ticket_values['_resolutiontime'] = None
+                # assumption that you cannot create a ticket in status closed
+                # so we give isclosed a false value from the off
+                ticket_values['isclosed'] = 0
+
+                # PROBLEM: How can we detect when a milestone was renamed (and
+                # tickets updated) - this isn't mentioned in the ticket_change
+                # table.
+                # Maybe we have to search the log file for strings?!  
+                # source:trunk/trac/trac/ticket/model.py@8937#L1192
+
+                if ticket_id == 18 or ticket_id ==19:
+                    print ticket_values
+
+                return ticket_values, ticket_created, history_date
+
             water_mark_cursor = db.cursor()
             water_mark_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
             water_mark_result = water_mark_cursor.fetchone()
@@ -202,63 +248,28 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     values = c.fetchone()
                     if not values:
                         print "No historical data for ticket %s on %s?" % (ticket_id, water_mark)
-                        continue
+                        ticket_values, ticket_created, history_date = ticket_not_in_history_table()
+                    else:
+                        ticket_values.update(dict(zip(columns, values)))
 
-                    ticket_values.update(dict(zip(columns, values)))
+                        # original storage for custom_fields can only store strings, so pretend we had a string
+                        for k, v in ticket_values.items():
+                            if k in custom_fields:
+                                if v:
+                                    ticket_values[k] = str(v)
+                                else:
+                                    ticket_values[k] = ''
 
-                    # original storage for custom_fields can only store strings, so pretend we had a string
-                    for k, v in ticket_values.items():
-                        if k in custom_fields:
-                            if v:
-                                ticket_values[k] = str(v)
-                            else:
-                                ticket_values[k] = ''
-
-                    ticket_values['id'] = ticket_id
+                        ticket_values['id'] = ticket_id
 
                 else:
-                    # first seen changes will be from the very first information we have about this ticket
-                    c = db.cursor()
-                    c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
-                    ticket_created = from_utimestamp(c.fetchone()[0])
-                    history_date = ticket_created.date()
-
-                    # find original values for the ticket
-                    for column in ticket_values.keys():
-                        c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
-                                  (ticket_id, column))
-                        result = c.fetchone()
-                        if result is None:
-                            if column in built_in_fields:
-                                c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
-                                result = c.fetchone()
-                            else:
-                                c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
-                                result = c.fetchone()
-                            if result:
-                                ticket_values[column] = result[0]
-                            else:
-                                ticket_values[column] = None
-                        else:
-                            ticket_values[column] = result[0]
-
-                    ticket_values['id'] = ticket_id
-                    ticket_values['time'] = ticket_created
-                    ticket_values['changetime'] = ticket_created
-                    ticket_values['_resolutiontime'] = None
-                    # assumption that you cannot create a ticket in status closed
-                    # so we give isclosed a false value from the off
-                    ticket_values['isclosed'] = 0
-
-                    # PROBLEM: How can we detect when a milestone was renamed (and
-                    # tickets updated) - this isn't mentioned in the ticket_change
-                    # table.
-                    # Maybe we have to search the log file for strings?!  
-                    # source:trunk/trac/trac/ticket/model.py@8937#L1192
+                    # first time we've run the history capture script
+                    ticket_values, ticket_created, history_date = ticket_not_in_history_table()
 
                 # now we're going to get a list of all the changes that this ticket goes through
 
                 ticket_changes = []
+                c = db.cursor()
                 # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
                 c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
                         ",".join(["'%s'" % k for k in ticket_values.keys()]),),
