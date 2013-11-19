@@ -318,7 +318,7 @@ class TransformExecutor(Component):
                     "*/*.ktr")):
             # refer to the ktr by the final folder and transformation filename
             ktr_name = ktr.split(os.sep)[-2]
-            tree = etree.parse(ktr, parser=etree.XMLParser())
+            tree = etree.parse(ktr)
             root = tree.getroot()
             try:
                 status = int(root.find('info/trans_status').text)
@@ -346,7 +346,7 @@ class TransformExecutor(Component):
                     "*/*.kjb")):
             # refer to the kjb by the final folder and job filename
             kjb_name = kjb.split(os.sep)[-2]
-            tree = etree.parse(kjb, parser=etree.XMLParser())
+            tree = etree.parse(kjb)
             root = tree.getroot()
             try:
                 status = int(root.find('job_status').text)
