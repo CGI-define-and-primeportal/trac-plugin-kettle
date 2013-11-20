@@ -34,7 +34,7 @@ class SpoonExecutor(Component):
         spoon = subprocess.Popen(["/bin/sh", "./spoon.sh"], 
                                  executable="/bin/sh",
                                  cwd=resource_filename(__name__, 'pentaho-data-integration'),
-                                 env={'PENTAHO_DI_JAVA_OPTIONS': "-Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
+                                 env={'PENTAHO_DI_JAVA_OPTIONS': "-Dfile.encoding=utf8 -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
                                       'DISPLAY': os.environ['DISPLAY'],
                                       'HOME': os.environ['HOME']})
 
