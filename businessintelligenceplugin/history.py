@@ -267,12 +267,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 ticket_changes = []
                 c = db.cursor()
-                # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
-                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
-                        ",".join(["'%s'" % k for k in ticket_values.keys()]),),
-                          (ticket_id,
-                           to_utimestamp(startofday(history_date)),
-                           to_utimestamp(startofnextday(until))))
+                sql = "SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s " \
+                    "AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (",".join(["%s"] * len(ticket_values)))
+                c.execute(sql,
+                          [ticket_id] + [k for k in ticket_values.keys()] + [to_utimestamp(startofday(history_date)),
+                                                                             to_utimestamp(startofnextday(until))])
                 for result in c:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
