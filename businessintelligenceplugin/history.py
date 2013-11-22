@@ -228,8 +228,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = {}
+                history_table_cols = [c.name for c in self.schema[0].columns]
                 for k in built_in_fields + custom_fields:
-                    if k in [c.name for c in self.schema[0].columns]:
+                    if k in history_table_cols:
                         ticket_values[k] = None
                 
                 # populate the "initial" values
