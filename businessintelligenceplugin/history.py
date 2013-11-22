@@ -196,19 +196,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 return ticket_values, ticket_created, history_date
 
-            water_mark_cursor = db.cursor()
-            water_mark_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
-            water_mark_result = water_mark_cursor.fetchone()
-            del water_mark_cursor
-            if water_mark_result:
-                water_mark = water_mark_result[0]
-                print "Last successful run was at %s" % water_mark
+            last_snapshot_cursor = db.cursor()
+            last_snapshot_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
+            last_snapshot_result = last_snapshot_cursor.fetchone()
+            del last_snapshot_cursor
+            if last_snapshot_result:
+                last_snapshot = last_snapshot_result[0]
+                print "Last successful run was at %s" % last_snapshot
 
-                if until <= water_mark:
-                    print "Already have data for %s, so can't run with until=%s" % (water_mark, until)
+                if until <= last_snapshot:
+                    print "Already have data for %s, so can't run with until=%s" % (last_snapshot, until)
                     return False
             else:
-                water_mark = None
+                last_snapshot = None
                 print "No previous runs"
 
             # Get statuses we consider to be closed for each ticket type
@@ -222,7 +222,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
             for ticket_id, in ticket_ids:
                 self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
-                              water_mark,
+                              last_snapshot,
                               until,
                               ticket_id)
 
@@ -233,18 +233,18 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         ticket_values[k] = None
                 
                 # populate the "initial" values
-                if water_mark:
-                    history_date = water_mark + datetime.timedelta(days=1)
+                if last_snapshot:
+                    history_date = last_snapshot + datetime.timedelta(days=1)
                     c = db.cursor()
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
                     c.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
-                              (ticket_id, water_mark))
+                              (ticket_id, last_snapshot))
 
                     values = c.fetchone()
                     if not values:
-                        self.log.warn("No historical data for ticket %s on %s?", ticket_id, water_mark)
+                        self.log.warn("No historical data for ticket %s on %s?", ticket_id, last_snapshot)
                         ticket_values, ticket_created, history_date = ticket_not_in_history_table()
                     else:
                         ticket_values.update(dict(zip(columns, values)))
