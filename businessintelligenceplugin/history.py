@@ -162,7 +162,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 print "Last successful run was at %s" % water_mark
 
                 if until <= water_mark:
-                    print "Already have data up to %s, so can't run with until=%s" % (water_mark, until)
+                    print "Already have data for %s, so can't run with until=%s" % (water_mark, until)
                     return False
             else:
                 water_mark = None
@@ -178,10 +178,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = db.cursor()
                 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
             for ticket_id, in ticket_ids:
-                print "Working on %s to %s (stopping before %s) for ticket %d" % (water_mark,
-                                                                                  until,
-                                                                                  startofnextday(until),
-                                                                                  ticket_id)
+                print "Working on (after) %s to (end of) %s for ticket %d" % (water_mark,
+                                                                              until,
+                                                                              ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = {}
