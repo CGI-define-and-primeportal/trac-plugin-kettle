@@ -295,12 +295,29 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     #print next_known
                     #print previous_known
                     #print currently
-                    candidates = [(currently[0] - startofnextday(date), currently[0], float(currently[1]))]
+                    candidates = []
+                    try:
+                        candidates.append((currently[0] - startofnextday(date), currently[0], float(currently[1])))
+                    except (TypeError, ValueError), e:
+                        self.log.warning("Invalid float in %s for remaininghours on ticket %s", 
+                                         currently, ticket_values['id'])
                     if next_known:
-                        candidates.append((next_known[0] - startofnextday(date), next_known[0], float(next_known[1])))
+                        try:
+                            candidates.append((next_known[0] - startofnextday(date), next_known[0], float(next_known[1])))
+                        except (TypeError, ValueError), e:
+                            self.log.warning("Invalid float for next_known in %s for remaininghours on ticket %s", 
+                                             next_known, ticket_values['id'])
                     if previous_known:
-                        candidates.append((startofnextday(date) - previous_known[0], previous_known[0], float(previous_known[1])))
+                        try:
+                            candidates.append((startofnextday(date) - previous_known[0], previous_known[0], float(previous_known[1])))
+                        except (TypeError, ValueError), e:
+                            self.log.warning("Invalid float for previous_known in %s for remaininghours on ticket %s", 
+                                             previous_known, ticket_values['id'])
+                    if not candidates:
+                        return 0
+
                     best_candidate = sorted(candidates)[0]
+
                     #print best_candidate[0], best_candidate
 
                     # in these comments, "today" and "current" is
