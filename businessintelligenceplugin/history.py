@@ -219,7 +219,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = [(int(only_ticket),)]
             else:
                 ticket_ids = db.cursor()
-                ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
+                ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
             for ticket_id, in ticket_ids:
                 self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
                               last_snapshot,
