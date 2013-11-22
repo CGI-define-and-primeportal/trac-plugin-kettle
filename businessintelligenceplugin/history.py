@@ -178,9 +178,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = db.cursor()
                 ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
             for ticket_id, in ticket_ids:
-                print "Working on (after) %s to (end of) %s for ticket %d" % (water_mark,
-                                                                              until,
-                                                                              ticket_id)
+                self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
+                              water_mark,
+                              until,
+                              ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = {}
@@ -200,7 +201,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                     values = c.fetchone()
                     if not values:
-                        print "No historical data for ticket %s on %s?" % (ticket_id, water_mark)
+                        self.log.warn("No historical data for ticket %s on %s?", ticket_id, water_mark)
                         continue
 
                     ticket_values.update(dict(zip(columns, values)))
@@ -291,10 +292,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     c.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
                     currently = c.fetchone()
-                    #print "----", date
-                    #print next_known
-                    #print previous_known
-                    #print currently
+                    self.log.debug("Finding remaininghours for end of %s", date)
+                    self.log.debug("Previous known value: %s", previous_known)
+                    self.log.debug("Current known value: %s", currently)
+                    self.log.debug("Next known value: %s", next_known)
                     candidates = []
                     try:
                         candidates.append((currently[0] - startofnextday(date), currently[0], float(currently[1])))
@@ -314,9 +315,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             self.log.warning("Invalid float for previous_known in %s for remaininghours on ticket %s", 
                                              previous_known, ticket_values['id'])
                     if not candidates:
+                        self.log.warn("No known information about remaininghours, guessing 0")
                         return 0
 
                     best_candidate = sorted(candidates)[0]
+                    self.log.debug("Closest known data point is %s", best_candidate)
 
                     #print best_candidate[0], best_candidate
 
@@ -328,6 +331,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # probably it should be 0 right now (as the hours
                     # plugin wouldn't let it go negative
                     if best_candidate[2] == 0 and not previous_known:
+                        self.log.debug("The closest known data point is 0, and we don't know any previous data, so assume it must be 0")
                         return 0
 
                     if startofnextday(date) < best_candidate[1]:
@@ -344,8 +348,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                    to_timestamp(best_candidate[1])))
                         result = c.fetchone()
                         if result and result[0]:
-                            return best_candidate[2] + (result[0]/3600.0)
+                            r = best_candidate[2] + (result[0]/3600.0)
+                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s",
+                                           best_candidate[2],
+                                           result[0],
+                                           startofnextday(date),
+                                           best_candidate[1],
+                                           r)
+                            return r
                         else:
+                            self.log.debug("There was no time worked between %s and %s, so remaininghours must be %s",
+                                           startofnextday(date),
+                                           best_candidate[1],
+                                           best_candidate[2])
                             return best_candidate[2]
                     else:
                         # we've found evidence of what it was in the
@@ -360,10 +375,18 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                    to_timestamp(startofnextday(date))))
                         result = c.fetchone()
                         if result and result[0]:
-                            return best_candidate[2] - (result[0]/3600.0)
+                            r = best_candidate[2] - (result[0]/3600.0)
+                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours is %s",
+                                           best_candidate[2],
+                                           result[0],
+                                           best_candidate[1],
+                                           startofnextday(date),
+                                           r)
+                            return r
                         else:
                             return best_candidate[2]
-
+                    
+                    self.log.warn("Returning default of 0 for remaininghours")
                     return 0
 
                 execute_many_buffer = []
@@ -372,16 +395,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     for time, field, newvalue in ticket_changes:
                         if time < startofnextday(history_date):
                             # finding the newest change for each field, which is older than or equal to history_date
-                            #print "Setting %s to %s" % (field, newvalue)
+                            self.log.debug("On %s, saw setting %s to %s", time, field, newvalue)
                             active_changes[field] = newvalue
                             active_changes['changetime'] = time
                             if field == "resolution":
                                 active_changes['_resolutiontime'] = time
                             # work out if the new status is in a statusgroup with the attr closed='True'
                             if field == 'status':
-                                if newvalue in closed_statuses[ticket_values['type']]:
+                                s = closed_statuses[ticket_values['type']]
+                                if newvalue in s:
+                                    self.log.debug("Recognising ticket as closed due to %s in %s", newvalue, s)
                                     active_changes['isclosed'] = 1
                                 else:
+                                    self.log.debug("Recognising ticket as open due to %s not in %s", newvalue, s)
                                     active_changes['isclosed'] = 0
 
                     ticket_values.update(active_changes)
@@ -405,12 +431,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             insert_buffer.append(ticket_values[column.name])
                         else:
                             insert_buffer.append(None)
-
+                    self.log.debug("insert_buffer is %s", insert_buffer)
                     execute_many_buffer.append(insert_buffer)
 
                     history_date = history_date + datetime.timedelta(days=1)
 
-                #print "Inserting..."
+                self.log.debug("Inserting...")
                 # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
                 # and avoids any small differences in Python vs. SQL functions
 
