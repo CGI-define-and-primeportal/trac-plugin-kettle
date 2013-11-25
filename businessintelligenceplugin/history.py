@@ -4,6 +4,7 @@ from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
 from trac.ticket.api import TicketSystem
 import psycopg2
+import os
 import datetime
 import types
 from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
@@ -117,7 +118,32 @@ Can then also be limited to just one ticket for debugging purposes, but will not
     # Internal methods
     
     def capture(self, until_str=None, only_ticket=None):
+        # avoid trying to run two captures in parallel for one project
 
+        try: 
+            import fcntl
+        except ImportError, e:
+            self.log.warning("Trying to acquire file lock but fcntl is not available: %s", e)
+            fcntl = None
+        try:
+            if fcntl:
+                lock_path = os.path.join(os.path.abspath(self.env.path), 'bi_history_capture.lock')
+                lock_file = open(lock_path, 'w')
+                try:
+                    #acquire non-blocking exclusive lock
+                    fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except IOError, e:
+                    self.log.fatal("Failed to acquire lock on %s, is another process still running?", lock_path)
+                    fcntl = None
+                    return 
+            self._capture(until_str, only_ticket)
+        finally:
+            if fcntl:
+                #release lock
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+                lock_file.close()
+
+    def _capture(self, until_str=None, only_ticket=None):
         yesterday = datetime.date.today() - datetime.timedelta(days = 1)
         if not until_str:
             until = yesterday
