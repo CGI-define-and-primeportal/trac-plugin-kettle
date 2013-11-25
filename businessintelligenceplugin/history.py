@@ -194,9 +194,6 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # Maybe we have to search the log file for strings?!  
                 # source:trunk/trac/trac/ticket/model.py@8937#L1192
 
-                if ticket_id == 18 or ticket_id ==19:
-                    print ticket_values
-
                 return ticket_values, ticket_created, history_date
 
             water_mark_cursor = db.cursor()
