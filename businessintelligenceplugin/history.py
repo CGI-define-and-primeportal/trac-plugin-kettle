@@ -153,6 +153,52 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
         @with_transaction(self.env)
         def _capture(db):
+
+            def calculate_initial_values_for_ticket(ticket_id):
+                # first seen changes will be from the very first information we have about this ticket
+                cursor = db.cursor()
+                cursor.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
+                ticket_created = from_utimestamp(cursor.fetchone()[0])
+                history_date = ticket_created.date()
+
+                # find original values for the ticket
+                for column in ticket_values.keys():
+                    cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
+                                   (ticket_id, column))
+                    result = cursor.fetchone()
+                    if result is None:
+                        if column in built_in_fields:
+                            cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
+                            result = cursor.fetchone()
+                        else:
+                            cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
+                            result = cursor.fetchone()
+                        if result:
+                            ticket_values[column] = result[0]
+                        else:
+                            ticket_values[column] = None
+                    else:
+                        ticket_values[column] = result[0]
+
+                ticket_values['id'] = ticket_id
+                ticket_values['time'] = ticket_created
+                ticket_values['changetime'] = ticket_created
+                ticket_values['_resolutiontime'] = None
+                # assumption that you cannot create a ticket in status closed
+                # so we give isclosed a false value from the off
+                ticket_values['isclosed'] = 0
+
+                # PROBLEM: How can we detect when a milestone was renamed (and
+                # tickets updated) - this isn't mentioned in the ticket_change
+                # table.
+                # Maybe we have to search the log file for strings?!  
+                # source:trunk/trac/trac/ticket/model.py@8937#L1192
+
+                if ticket_id == 18 or ticket_id ==19:
+                    print ticket_values
+
+                return ticket_values, ticket_created, history_date
+
             water_mark_cursor = db.cursor()
             water_mark_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
             water_mark_result = water_mark_cursor.fetchone()
@@ -192,106 +238,71 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # populate the "initial" values
                 if water_mark:
                     history_date = water_mark + datetime.timedelta(days=1)
-                    c = db.cursor()
+                    cursor = db.cursor()
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
-                    c.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
+                    cursor.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
                               (ticket_id, water_mark))
 
-                    values = c.fetchone()
+                    values = cursor.fetchone()
                     if not values:
                         self.log.warn("No historical data for ticket %s on %s?", ticket_id, water_mark)
-                        continue
+                        ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
+                    else:
+                        ticket_values.update(dict(zip(columns, values)))
 
-                    ticket_values.update(dict(zip(columns, values)))
+                        # original storage for custom_fields can only store strings, so pretend we had a string
+                        for k, v in ticket_values.items():
+                            if k in custom_fields:
+                                if v:
+                                    ticket_values[k] = str(v)
+                                else:
+                                    ticket_values[k] = ''
 
-                    # original storage for custom_fields can only store strings, so pretend we had a string
-                    for k, v in ticket_values.items():
-                        if k in custom_fields:
-                            if v:
-                                ticket_values[k] = str(v)
-                            else:
-                                ticket_values[k] = ''
-
-                    ticket_values['id'] = ticket_id
+                        ticket_values['id'] = ticket_id
 
                 else:
-                    # first seen changes will be from the very first information we have about this ticket
-                    c = db.cursor()
-                    c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
-                    ticket_created = from_utimestamp(c.fetchone()[0])
-                    history_date = ticket_created.date()
-
-                    # find original values for the ticket
-                    for column in ticket_values.keys():
-                        c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
-                                  (ticket_id, column))
-                        result = c.fetchone()
-                        if result is None:
-                            if column in built_in_fields:
-                                c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
-                                result = c.fetchone()
-                            else:
-                                c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
-                                result = c.fetchone()
-                            if result:
-                                ticket_values[column] = result[0]
-                            else:
-                                ticket_values[column] = None
-                        else:
-                            ticket_values[column] = result[0]
-
-                    ticket_values['id'] = ticket_id
-                    ticket_values['time'] = ticket_created
-                    ticket_values['changetime'] = ticket_created
-                    ticket_values['_resolutiontime'] = None
-                    # assumption that you cannot create a ticket in status closed
-                    # so we give isclosed a false value from the off
-                    ticket_values['isclosed'] = 0
-
-                    # PROBLEM: How can we detect when a milestone was renamed (and
-                    # tickets updated) - this isn't mentioned in the ticket_change
-                    # table.
-                    # Maybe we have to search the log file for strings?!  
-                    # source:trunk/trac/trac/ticket/model.py@8937#L1192
+                    # first time we've run the history capture script
+                    ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
 
                 # now we're going to get a list of all the changes that this ticket goes through
 
                 ticket_changes = []
+                cursor = db.cursor()
                 # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
-                c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
+                cursor.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
                         ",".join(["'%s'" % k for k in ticket_values.keys()]),),
                           (ticket_id,
                            to_utimestamp(startofday(history_date)),
                            to_utimestamp(startofnextday(until))))
-                for result in c:
+                for result in cursor:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
                 def _calculate_totalhours_on_date(date):
-                    c.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
+                    cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
                                to_timestamp(startofnextday(history_date))))
-                    result = c.fetchone()
+                    result = cursor.fetchone()
                     return result[0] if result else 0
 
                 def _calculate_remaininghours_on_date(date):
                     # find the closest absolute value
-                    c.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
+                    cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
                               (ticket_values['id'],
                                to_utimestamp(startofnextday(date))))
-                    next_known = c.fetchone()
-                    c.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
+                    next_known = cursor.fetchone()
+                    cursor.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
                               (ticket_values['id'],
                                to_utimestamp(startofnextday(date))))
-                    previous_known = c.fetchone()
-                    c.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
+                    previous_known = cursor.fetchone()
+                    cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
-                    currently = c.fetchone()
+                    currently = cursor.fetchone()
                     self.log.debug("Finding remaininghours for end of %s", date)
                     self.log.debug("Previous known value: %s", previous_known)
                     self.log.debug("Current known value: %s", currently)
@@ -341,12 +352,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         # subtracting from 'remaininghours', then add
                         # it back to find the current 'remaininghours'
                         
-                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                        cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
                                    to_timestamp(startofnextday(date)),
                                    to_timestamp(best_candidate[1])))
-                        result = c.fetchone()
+                        result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
                             self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s",
@@ -368,12 +379,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         # now. As that time would be reducing
                         # 'remaininghours', we'll do that same
                         # reduction to find the value for today
-                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                        cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
                                    to_timestamp(best_candidate[1]),
                                    to_timestamp(startofnextday(date))))
-                        result = c.fetchone()
+                        result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] - (result[0]/3600.0)
                             self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours is %s",
@@ -440,7 +451,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
                 # and avoids any small differences in Python vs. SQL functions
 
-                c.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)" % (
+                cursor.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)" % (
                         ",".join(db.quote(c.name) for c in self.schema[0].columns),
                         ",".join(["%s"] * len(self.schema[0].columns))),
                               execute_many_buffer)
