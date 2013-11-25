@@ -180,7 +180,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         @with_transaction(self.env)
         def _capture(db):
 
-            def ticket_not_in_history_table():
+            def calculate_initial_values_for_ticket(ticket_id):
                 # first seen changes will be from the very first information we have about this ticket
                 c = db.cursor()
                 c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
@@ -272,7 +272,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     values = c.fetchone()
                     if not values:
                         self.log.warn("No historical data for ticket %s on %s?", ticket_id, last_snapshot)
-                        ticket_values, ticket_created, history_date = ticket_not_in_history_table()
+                        ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
                     else:
                         ticket_values.update(dict(zip(columns, values)))
 
@@ -288,7 +288,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 else:
                     # first time we've run the history capture script
-                    ticket_values, ticket_created, history_date = ticket_not_in_history_table()
+                    ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
 
                 # now we're going to get a list of all the changes that this ticket goes through
 
