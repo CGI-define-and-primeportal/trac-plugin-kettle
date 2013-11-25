@@ -182,23 +182,23 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
             def calculate_initial_values_for_ticket(ticket_id):
                 # first seen changes will be from the very first information we have about this ticket
-                c = db.cursor()
-                c.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
-                ticket_created = from_utimestamp(c.fetchone()[0])
+                cursor = db.cursor()
+                cursor.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
+                ticket_created = from_utimestamp(cursor.fetchone()[0])
                 history_date = ticket_created.date()
 
                 # find original values for the ticket
                 for column in ticket_values.keys():
-                    c.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
-                              (ticket_id, column))
-                    result = c.fetchone()
+                    cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
+                                   (ticket_id, column))
+                    result = cursor.fetchone()
                     if result is None:
                         if column in built_in_fields:
-                            c.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
-                            result = c.fetchone()
+                            cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
+                            result = cursor.fetchone()
                         else:
-                            c.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
-                            result = c.fetchone()
+                            cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
+                            result = cursor.fetchone()
                         if result:
                             ticket_values[column] = result[0]
                         else:
@@ -262,14 +262,14 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # populate the "initial" values
                 if last_snapshot:
                     history_date = last_snapshot + datetime.timedelta(days=1)
-                    c = db.cursor()
+                    cursor = db.cursor()
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
-                    c.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
+                    cursor.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
                               (ticket_id, last_snapshot))
 
-                    values = c.fetchone()
+                    values = cursor.fetchone()
                     if not values:
                         self.log.warn("No historical data for ticket %s on %s?", ticket_id, last_snapshot)
                         ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
@@ -293,39 +293,39 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # now we're going to get a list of all the changes that this ticket goes through
 
                 ticket_changes = []
-                c = db.cursor()
+                cursor = db.cursor()
                 sql = "SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s " \
                     "AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (",".join(["%s"] * len(ticket_values)))
-                c.execute(sql,
+                cursor.execute(sql,
                           [ticket_id] + [k for k in ticket_values.keys()] + [to_utimestamp(startofday(history_date)),
                                                                              to_utimestamp(startofnextday(until))])
-                for result in c:
+                for result in cursor:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
                 def _calculate_totalhours_on_date(date):
-                    c.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
+                    cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
                                to_timestamp(startofnextday(history_date))))
-                    result = c.fetchone()
+                    result = cursor.fetchone()
                     return result[0] if result else 0
 
                 def _calculate_remaininghours_on_date(date):
                     # find the closest absolute value
-                    c.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
+                    cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
                               (ticket_values['id'],
                                to_utimestamp(startofnextday(date))))
-                    next_known = c.fetchone()
-                    c.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
+                    next_known = cursor.fetchone()
+                    cursor.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
                               (ticket_values['id'],
                                to_utimestamp(startofnextday(date))))
-                    previous_known = c.fetchone()
-                    c.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
+                    previous_known = cursor.fetchone()
+                    cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
-                    currently = c.fetchone()
+                    currently = cursor.fetchone()
                     self.log.debug("Finding remaininghours for end of %s", date)
                     self.log.debug("Previous known value: %s", previous_known)
                     self.log.debug("Current known value: %s", currently)
@@ -375,12 +375,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         # subtracting from 'remaininghours', then add
                         # it back to find the current 'remaininghours'
                         
-                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                        cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
                                    to_timestamp(startofnextday(date)),
                                    to_timestamp(best_candidate[1])))
-                        result = c.fetchone()
+                        result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
                             self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours must be %s",
@@ -402,12 +402,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         # now. As that time would be reducing
                         # 'remaininghours', we'll do that same
                         # reduction to find the value for today
-                        c.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
+                        cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
                                    to_timestamp(best_candidate[1]),
                                    to_timestamp(startofnextday(date))))
-                        result = c.fetchone()
+                        result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] - (result[0]/3600.0)
                             self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours is %s",
@@ -474,7 +474,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
                 # and avoids any small differences in Python vs. SQL functions
 
-                c.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)" % (
+                cursor.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)" % (
                         ",".join(db.quote(c.name) for c in self.schema[0].columns),
                         ",".join(["%s"] * len(self.schema[0].columns))),
                               execute_many_buffer)
