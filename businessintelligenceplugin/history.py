@@ -357,7 +357,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         result = c.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
-                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s",
+                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours must be %s",
                                            best_candidate[2],
                                            result[0],
                                            startofnextday(date),
