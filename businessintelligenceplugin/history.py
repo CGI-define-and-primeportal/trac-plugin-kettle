@@ -4,6 +4,7 @@ from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
 from trac.ticket.api import TicketSystem
 import psycopg2
+import os
 import datetime
 import types
 from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
@@ -117,7 +118,32 @@ Can then also be limited to just one ticket for debugging purposes, but will not
     # Internal methods
     
     def capture(self, until_str=None, only_ticket=None):
+        # avoid trying to run two captures in parallel for one project
 
+        try: 
+            import fcntl
+        except ImportError, e:
+            self.log.warning("Trying to acquire file lock but fcntl is not available: %s", e)
+            fcntl = None
+        try:
+            if fcntl:
+                lock_path = os.path.join(os.path.abspath(self.env.path), 'bi_history_capture.lock')
+                lock_file = open(lock_path, 'w')
+                try:
+                    #acquire non-blocking exclusive lock
+                    fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except IOError, e:
+                    self.log.fatal("Failed to acquire lock on %s, is another process still running?", lock_path)
+                    fcntl = None
+                    return 
+            self._capture(until_str, only_ticket)
+        finally:
+            if fcntl:
+                #release lock
+                fcntl.flock(lock_file, fcntl.LOCK_UN)
+                lock_file.close()
+
+    def _capture(self, until_str=None, only_ticket=None):
         yesterday = datetime.date.today() - datetime.timedelta(days = 1)
         if not until_str:
             until = yesterday
@@ -196,19 +222,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 return ticket_values, ticket_created, history_date
 
-            water_mark_cursor = db.cursor()
-            water_mark_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
-            water_mark_result = water_mark_cursor.fetchone()
-            del water_mark_cursor
-            if water_mark_result:
-                water_mark = water_mark_result[0]
-                print "Last successful run was at %s" % water_mark
+            last_snapshot_cursor = db.cursor()
+            last_snapshot_cursor.execute("SELECT _snapshottime FROM ticket_bi_historical ORDER BY _snapshottime DESC LIMIT 1")
+            last_snapshot_result = last_snapshot_cursor.fetchone()
+            del last_snapshot_cursor
+            if last_snapshot_result:
+                last_snapshot = last_snapshot_result[0]
+                print "Last successful run was at %s" % last_snapshot
 
-                if until <= water_mark:
-                    print "Already have data for %s, so can't run with until=%s" % (water_mark, until)
+                if until <= last_snapshot:
+                    print "Already have data for %s, so can't run with until=%s" % (last_snapshot, until)
                     return False
             else:
-                water_mark = None
+                last_snapshot = None
                 print "No previous runs"
 
             # Get statuses we consider to be closed for each ticket type
@@ -219,32 +245,33 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = [(int(only_ticket),)]
             else:
                 ticket_ids = db.cursor()
-                ticket_ids.execute("SELECT id FROM ticket GROUP BY id ORDER BY id")
+                ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
             for ticket_id, in ticket_ids:
                 self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
-                              water_mark,
+                              last_snapshot,
                               until,
                               ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = {}
+                history_table_cols = [c.name for c in self.schema[0].columns]
                 for k in built_in_fields + custom_fields:
-                    if k in [c.name for c in self.schema[0].columns]:
+                    if k in history_table_cols:
                         ticket_values[k] = None
                 
                 # populate the "initial" values
-                if water_mark:
-                    history_date = water_mark + datetime.timedelta(days=1)
+                if last_snapshot:
+                    history_date = last_snapshot + datetime.timedelta(days=1)
                     cursor = db.cursor()
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
                     cursor.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
-                              (ticket_id, water_mark))
+                              (ticket_id, last_snapshot))
 
                     values = cursor.fetchone()
                     if not values:
-                        self.log.warn("No historical data for ticket %s on %s?", ticket_id, water_mark)
+                        self.log.warn("No historical data for ticket %s on %s?", ticket_id, last_snapshot)
                         ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
                     else:
                         ticket_values.update(dict(zip(columns, values)))
@@ -267,12 +294,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 ticket_changes = []
                 cursor = db.cursor()
-                # Unsure about this - got to be a safer way to generate the IN expression? Concerned about SQL injection if users create new customfield names?
-                cursor.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (
-                        ",".join(["'%s'" % k for k in ticket_values.keys()]),),
-                          (ticket_id,
-                           to_utimestamp(startofday(history_date)),
-                           to_utimestamp(startofnextday(until))))
+                sql = "SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s " \
+                    "AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (",".join(["%s"] * len(ticket_values)))
+                cursor.execute(sql,
+                               [ticket_id] + [k for k in ticket_values.keys()] + [to_utimestamp(startofday(history_date)),
+                                                                             to_utimestamp(startofnextday(until))])
                 for result in cursor:
                     ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
 
@@ -357,7 +383,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
-                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s",
+                            self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours must be %s",
                                            best_candidate[2],
                                            result[0],
                                            startofnextday(date),
