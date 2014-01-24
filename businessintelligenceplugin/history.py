@@ -48,7 +48,9 @@ class HistoryStorageSystem(Component):
         ]
     
     def environment_created(self):
-        self.upgrade_environment(self.env.get_db_cnx())
+        @self.env.with_transaction()
+        def do_create(db):
+            self.upgrade_environment(db)
 
     def _check_schema_version(self, db):
         cursor = db.cursor()
