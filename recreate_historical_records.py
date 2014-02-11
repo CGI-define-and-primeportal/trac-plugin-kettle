@@ -74,13 +74,11 @@ for ticket_id, in ticket_ids:
     # Maybe we have to search the log file for strings?!  
     # source:trunk/trac/trac/ticket/model.py@8937#L1192
 
-
-    ticket_changes = []
     c.execute("SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s AND field in %s ORDER BY time" % (
             str(tuple(ticket_values.keys())),),
               (ticket_id,))
-    for result in c:
-        ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
+    ticket_changes = [(from_utimestamp(time), field, newvalue)
+                      for time, field, newvalue in c]
 
     execute_many_buffer = []
     while history_date < datetime.date.today():

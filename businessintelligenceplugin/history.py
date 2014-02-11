@@ -294,15 +294,14 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 # now we're going to get a list of all the changes that this ticket goes through
 
-                ticket_changes = []
                 cursor = db.cursor()
                 sql = "SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s " \
                     "AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (",".join(["%s"] * len(ticket_values)))
                 cursor.execute(sql,
                           [ticket_id] + [k for k in ticket_values.keys()] + [to_utimestamp(startofday(history_date)),
                                                                              to_utimestamp(startofnextday(until))])
-                for result in cursor:
-                    ticket_changes.append((from_utimestamp(result[0]), result[1], result[2]))
+                ticket_changes =[(from_utimestamp(time), field, newvalue)
+                                 for time, field, newvalue in cursor]
 
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
@@ -460,13 +459,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         if k in empty_means_zero and not ticket_values[k]:
                             ticket_values[k] = "0"
 
-                    insert_buffer = []
                     ticket_values["_snapshottime"] = history_date
-                    for column in self.schema[0].columns:
-                        if column.name in ticket_values:
-                            insert_buffer.append(ticket_values[column.name])
-                        else:
-                            insert_buffer.append(None)
+                    insert_buffer = [ticket_values.get(column.name)
+                                     for column in self.schema[0].columns]
                     self.log.debug("insert_buffer is %s", insert_buffer)
                     execute_many_buffer.append(insert_buffer)
 
