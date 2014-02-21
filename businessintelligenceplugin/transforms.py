@@ -272,31 +272,32 @@ class TransformExecutor(Component):
                 revs.append(rev)
 
         if return_bytes_handle:
-            try:
-                src = os.path.abspath(os.path.join(tempdir,'svn'))
-                files = sorted(os.listdir(src))
 
-                if len(files) == 1 :
-                    filename = files[0]
-                    fullpath = os.path.join(src,filename)
-                    returndata = filename, os.stat(fullpath), open(fullpath,'r')
-                #if more then one file make a zip archive
-                elif len(files) > 1:
-                    output_filename = transform['name'].replace(" ", "-") + '-archive.zip'
-                    output_path = os.path.abspath(os.path.join(src,output_filename))
-                    z = ZipFile(output_path, 'w')
-                    for dirname, dirs, files in os.walk(src):
-                        for f in files:
-                            if not output_filename in f:
-                                absname = os.path.abspath(os.path.join(dirname, f))
-                                arcname = absname[len(src) + 1:]
-                                z.write(absname,arcname)
-                    z.close()
-                    returndata = output_filename, os.stat(output_path), open(output_path,'r')
+            src = os.path.abspath(os.path.join(tempdir,'svn'))
+            files = sorted(os.listdir(src))
 
-            except IndexError, e:
-                # probably didn't generate any files
-                raise HTTPNotFound("Operation did not create any output")
+            if len(files) == 0:
+                raise HTTPNotFound("Operation did not create any output")                    
+
+            elif len(files) == 1:
+                filename = files[0]
+                fullpath = os.path.join(src,filename)
+                returndata = filename, os.stat(fullpath), open(fullpath,'r')
+
+            elif len(files) > 1:
+                output_filename = transform['name'].replace(" ", "-") + '-archive.zip'
+                output_path = os.path.abspath(os.path.join(src,output_filename))
+                z = ZipFile(output_path, 'w')
+                for dirname, dirs, files in os.walk(src):
+                    for f in files:
+                        if not output_filename in f:
+                            absname = os.path.abspath(os.path.join(dirname, f))
+                            arcname = absname[len(src) + 1:]
+                            z.write(absname,arcname)
+                z.close()
+                returndata = output_filename, os.stat(output_path), open(output_path,'r')
+
+
         else:
             returndata = revs
 
