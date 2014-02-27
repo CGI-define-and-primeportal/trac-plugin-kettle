@@ -168,22 +168,16 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 raise ValueError("Can't process any newer than %s" % yesterday)
 
         ts = TicketSystem(self.env)
-        custom_fields = []
-        empty_means_zero = []
-        built_in_fields = []
+        custom_fields = set(field['name'] for field in ts.fields
+                            if 'custom' in field)
+        empty_means_zero = set(field['name'] for field in ts.fields
+                               if field.get('datatype', 'float')
+                                                in set('float', 'integer'))
+        built_in_fields = set(field['name'] for field in ts.fields
+                              if 'custom' not in field
+                              and 'link' not in field)
         # history table column names which are not fields from the ticket system
         history_columns = ['isclosed']
-        for field in ts.fields:
-            if 'custom' in field:
-                custom_fields.append(field['name'])
-            elif 'link' in field:
-                pass
-            else:
-                built_in_fields.append(field['name'])
-
-            if field.get('datatype','float') in ('float', 'integer'):
-                empty_means_zero.append(field['name'])
-
 
         @with_transaction(self.env)
         def _capture(db):
