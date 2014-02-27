@@ -498,7 +498,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         @with_transaction(self.env)
         def _clear(db):
             cursor = db.cursor()
-            cursor.execute("DELETE from ticket_bi_historical")
+            cursor.execute("TRUNCATE ticket_bi_historical")
 
 
 def startofday(date):
