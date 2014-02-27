@@ -17,7 +17,7 @@ class HistoryStorageSystem(Component):
                IAdminCommandProvider)
 
     # IEnvironmentSetupParticipant
-    _schema_version = 3
+    _schema_version = 4
     schema = [
         # Ticket changesets
         Table('ticket_bi_historical')[
@@ -43,14 +43,26 @@ class HistoryStorageSystem(Component):
             Column('totalhours', type='double precision'),
             Column('remaininghours', type='double precision'),
             Index(['_snapshottime']),
+            Index(['isclosed']),
+            Index(['id']),
+            Index(['milestone']),
             Index(['_snapshottime','milestone','isclosed']),
             ]
         ]
     
     def environment_created(self):
+        db_connector, _ = DatabaseManager(self.env).get_connector()
         @self.env.with_transaction()
         def do_create(db):
-            self.upgrade_environment(db)
+            cursor = db.cursor()
+            for table in self.schema:
+                for statement in db_connector.to_sql(table):
+                    cursor.execute(statement)
+
+            # system values are strings
+            cursor.execute("INSERT INTO system (name, value) "
+                           "VALUES ('bi_history_schema', %s)", 
+                           (str(self._schema_version),))
 
     def _check_schema_version(self, db):
         cursor = db.cursor()
@@ -83,14 +95,7 @@ class HistoryStorageSystem(Component):
         found_version = self._check_schema_version(db)
         if not found_version:
             # Create tables
-            for table in self.schema:
-                for statement in db_connector.to_sql(table):
-                    cursor.execute(statement)
-
-            # system values are strings
-            cursor.execute("INSERT INTO system (name, value) VALUES ('bi_history_schema',%s)", 
-                           (str(self._schema_version),))
-
+            self.environment_created()
         elif found_version == 2:
             # We've not released anywhere yet, so this seems more practical 
             # than writing a database-agnostic way to convert the isclosed column
@@ -100,8 +105,16 @@ class HistoryStorageSystem(Component):
                     cursor.execute(statement)
             cursor.execute("UPDATE system SET value = %s WHERE name = 'bi_history_schema'", 
                            (str(self._schema_version),))
-        
-
+        elif found_version == 3:
+            cursor.execute("CREATE INDEX ticket_bi_historical_isclosed "
+                           "ON ticket_bi_historical (isclosed)")
+            cursor.execute("CREATE INDEX ticket_bi_historical_id "
+                           "ON ticket_bi_historical (id)")
+            cursor.execute("CREATE INDEX ticket_bi_historical_milestone "
+                           "ON ticket_bi_historical (milestone)")
+            cursor.execute("UPDATE system SET value = %s "
+                           "WHERE name = 'bi_history_schema'", 
+                           (str(self._schema_version),))
 
     # IAdminCommandProvider methods
     
