@@ -128,13 +128,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         yield ('businessintelligence history clear', '[force]',
                """Clear up history capture tables - deletes data""",
                None, self.clear)
-               
-               
+
     # Internal methods
-    
+
     def capture(self, until_str=None, only_ticket=None):
         # avoid trying to run two captures in parallel for one project
-
         try: 
             import fcntl
         except ImportError, e:
@@ -182,7 +180,6 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                      if field in history_table_cols)
         # history table column names which are not fields from the ticket system
         history_columns = ['isclosed']
-
         @with_transaction(self.env)
         def _capture(db):
             def calculate_initial_values_for_ticket(ticket_id):
