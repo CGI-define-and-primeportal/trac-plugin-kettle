@@ -313,15 +313,16 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 def _calculate_remaininghours_on_date(date):
                     # find the closest absolute value
+                    nextdate = startofnextday(date)
                     cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
                               (ticket_values['id'],
-                               to_utimestamp(startofnextday(date))))
+                               to_utimestamp(nextdate)))
                     next_known = cursor.fetchone()
                     cursor.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
                               (ticket_values['id'],
-                               to_utimestamp(startofnextday(date))))
+                               to_utimestamp(nextdate)))
                     previous_known = cursor.fetchone()
                     cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
@@ -332,19 +333,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     self.log.debug("Next known value: %s", next_known)
                     candidates = []
                     try:
-                        candidates.append((currently[0] - startofnextday(date), currently[0], float(currently[1])))
+                        candidates.append((currently[0] - nextdate, currently[0], float(currently[1])))
                     except (TypeError, ValueError), e:
                         self.log.warning("Invalid float in %s for remaininghours on ticket %s", 
                                          currently, ticket_values['id'])
                     if next_known:
                         try:
-                            candidates.append((next_known[0] - startofnextday(date), next_known[0], float(next_known[1])))
+                            candidates.append((next_known[0] - nextdate, next_known[0], float(next_known[1])))
                         except (TypeError, ValueError), e:
                             self.log.warning("Invalid float for next_known in %s for remaininghours on ticket %s", 
                                              next_known, ticket_values['id'])
                     if previous_known:
                         try:
-                            candidates.append((startofnextday(date) - previous_known[0], previous_known[0], float(previous_known[1])))
+                            candidates.append((nextdate - previous_known[0], previous_known[0], float(previous_known[1])))
                         except (TypeError, ValueError), e:
                             self.log.warning("Invalid float for previous_known in %s for remaininghours on ticket %s", 
                                              previous_known, ticket_values['id'])
@@ -368,7 +369,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         self.log.debug("The closest known data point is 0, and we don't know any previous data, so assume it must be 0")
                         return 0
 
-                    if startofnextday(date) < best_candidate[1]:
+                    if nextdate < best_candidate[1]:
                         # we've found evidence of what it was at a
                         # future date, so sum up the time spent
                         # between now and then. As that time would be
@@ -378,7 +379,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
-                                   to_timestamp(startofnextday(date)),
+                                   to_timestamp(nextdate),
                                    to_timestamp(best_candidate[1])))
                         result = cursor.fetchone()
                         if result and result[0]:
@@ -386,13 +387,13 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             self.log.debug("The closest data point was %s, and there was %s seconds worked between %s and %s, so remaininghours must be %s",
                                            best_candidate[2],
                                            result[0],
-                                           startofnextday(date),
+                                           nextdate,
                                            best_candidate[1],
                                            r)
                             return r
                         else:
                             self.log.debug("There was no time worked between %s and %s, so remaininghours must be %s",
-                                           startofnextday(date),
+                                           nextdate,
                                            best_candidate[1],
                                            best_candidate[2])
                             return best_candidate[2]
@@ -406,7 +407,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
                                    to_timestamp(best_candidate[1]),
-                                   to_timestamp(startofnextday(date))))
+                                   to_timestamp(nextdate)))
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] - (result[0]/3600.0)
@@ -414,7 +415,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                            best_candidate[2],
                                            result[0],
                                            best_candidate[1],
-                                           startofnextday(date),
+                                           nextdate,
                                            r)
                             return r
                         else:
