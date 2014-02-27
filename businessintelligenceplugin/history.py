@@ -335,6 +335,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                               (ticket_values['id'],
                                to_utimestamp(nextdate)))
                     previous_known = cursor.fetchone()
+                    # FIXME Is this selecting a random row? No order by clause
                     cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
                     currently = cursor.fetchone()
