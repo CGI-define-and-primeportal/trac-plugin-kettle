@@ -167,13 +167,6 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if until > yesterday:
                 raise ValueError("Can't process any newer than %s" % yesterday)
 
-        def startofday(date):
-            return datetime.datetime.combine(date, datetime.time(tzinfo=utc)) if date else None
-
-        def startofnextday(date):
-            return datetime.datetime.combine(date + datetime.timedelta(days = 1),
-                                             datetime.time(tzinfo=utc)) if date else None
-
         ts = TicketSystem(self.env)
         custom_fields = []
         empty_means_zero = []
@@ -499,3 +492,16 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             cursor = db.cursor()
             cursor.execute("DELETE from ticket_bi_historical")
 
+
+def startofday(date):
+    if date:
+        return datetime.datetime.combine(date, datetime.time(tzinfo=utc))
+    else:
+        return None
+
+def startofnextday(date):
+    if date:
+        return datetime.datetime.combine(date + datetime.timedelta(days=1),
+                                         datetime.time(tzinfo=utc))
+    else:
+        return None
