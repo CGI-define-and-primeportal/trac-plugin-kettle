@@ -466,7 +466,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
                     for k in ticket_values:
-                        if k in empty_means_zero and not ticket_values[k]:
+                        if not ticket_values[k] and k in empty_means_zero:
                             ticket_values[k] = "0"
 
                     ticket_values["_snapshottime"] = history_date
