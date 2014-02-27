@@ -251,6 +251,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             else:
                 ticket_ids = db.cursor()
                 ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
+
+            executemany_cols = [db.quote(col.name)
+                                for col in self.schema[0].columns]
+
             for ticket_id, in ticket_ids:
                 self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
                               last_snapshot,
@@ -471,7 +475,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                     ticket_values["_snapshottime"] = history_date
                     insert_buffer = [ticket_values.get(column.name)
-                                     for column in self.schema[0].columns]
+                                     for column in executemany_cols]
                     self.log.debug("insert_buffer is %s", insert_buffer)
                     execute_many_buffer.append(insert_buffer)
 
@@ -481,9 +485,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
                 # and avoids any small differences in Python vs. SQL functions
 
-                cursor.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)" % (
-                        ",".join(db.quote(c.name) for c in self.schema[0].columns),
-                        ",".join(["%s"] * len(self.schema[0].columns))),
+                cursor.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)"
+                                   % (','.join(executemany_cols),
+                                      db.parammarks(len(executemany_cols))),
                               execute_many_buffer)
 
     def clear(self, force=False):
