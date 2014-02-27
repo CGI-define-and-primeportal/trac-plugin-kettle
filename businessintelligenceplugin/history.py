@@ -267,7 +267,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
-                    cursor.execute("SELECT %s FROM ticket_bi_historical WHERE id = %%s AND _snapshottime = %%s" %  ",".join(columns), 
+                    cursor.execute("SELECT %s FROM ticket_bi_historical "
+                                   "WHERE id = %%s AND _snapshottime = %%s "
+                                   "LIMIT 1 "
+                                   %  ",".join(columns), 
                               (ticket_id, last_snapshot))
 
                     values = cursor.fetchone()
