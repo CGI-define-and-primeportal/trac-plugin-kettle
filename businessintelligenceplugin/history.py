@@ -176,12 +176,15 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         built_in_fields = set(field['name'] for field in ts.fields
                               if 'custom' not in field
                               and 'link' not in field)
+        history_table_cols = set(col.name for col in self.schema[0].columns)
+        proto_values = dict.fromkeys(field
+                                     for field in built_in_fields + custom_fields
+                                     if field in history_table_cols)
         # history table column names which are not fields from the ticket system
         history_columns = ['isclosed']
 
         @with_transaction(self.env)
         def _capture(db):
-
             def calculate_initial_values_for_ticket(ticket_id):
                 # first seen changes will be from the very first information we have about this ticket
                 cursor = db.cursor()
@@ -255,11 +258,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                               ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
-                ticket_values = {}
-                history_table_cols = [c.name for c in self.schema[0].columns]
-                for k in built_in_fields + custom_fields:
-                    if k in history_table_cols:
-                        ticket_values[k] = None
+                ticket_values = proto_values.copy()
                 
                 # populate the "initial" values
                 if last_snapshot:
