@@ -321,7 +321,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 def _calculate_totalhours_on_date(date):
                     cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
-                               to_timestamp(startofnextday(history_date))))
+                               to_timestamp(startofnextday(date))))
                     result = cursor.fetchone()
                     return result[0] if result else 0
 
