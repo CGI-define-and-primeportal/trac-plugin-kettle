@@ -297,11 +297,18 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # now we're going to get a list of all the changes that this ticket goes through
 
                 cursor = db.cursor()
-                sql = "SELECT time, field, newvalue FROM ticket_change WHERE ticket = %%s " \
-                    "AND field in (%s) AND time >= %%s AND time < %%s ORDER BY time" % (",".join(["%s"] * len(ticket_values)))
-                cursor.execute(sql,
-                          [ticket_id] + [k for k in ticket_values.keys()] + [to_utimestamp(startofday(history_date)),
-                                                                             to_utimestamp(startofnextday(until))])
+                cursor.execute("SELECT time, field, newvalue "
+                               "FROM ticket_change "
+                               "WHERE ticket = %%s AND field in (%s) "
+                               "AND time >= %%s AND time < %%s "
+                               "ORDER BY time "
+                               % db.parammarks(len(ticket_values)),
+                               [ticket_id]
+                               + ticket_values.keys()
+                               + [to_utimestamp(startofday(history_date)),
+                                  to_utimestamp(startofnextday(until)),
+                                  ]
+                               )
                 ticket_changes =[(from_utimestamp(time), field, newvalue)
                                  for time, field, newvalue in cursor]
 
