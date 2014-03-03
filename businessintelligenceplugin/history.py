@@ -170,13 +170,13 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             if 'custom' in field)
         empty_means_zero = set(field['name'] for field in ts.fields
                                if field.get('datatype', 'float')
-                                                in set('float', 'integer'))
+                                                in set(['float', 'integer']))
         built_in_fields = set(field['name'] for field in ts.fields
                               if 'custom' not in field
                               and 'link' not in field)
         history_table_cols = set(col.name for col in self.schema[0].columns)
         proto_values = dict.fromkeys(field
-                                     for field in built_in_fields + custom_fields
+                                     for field in built_in_fields | custom_fields
                                      if field in history_table_cols)
         # history table column names which are not fields from the ticket system
         history_columns = ['isclosed']
@@ -249,8 +249,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids = db.cursor()
                 ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
 
-            executemany_cols = [db.quote(col.name)
-                                for col in self.schema[0].columns]
+            executemany_cols = [col.name for col in self.schema[0].columns]
+            executemany_stmt = ("INSERT INTO ticket_bi_historical (%s) "
+                                "VALUES (%s)"
+                                % (','.join(db.quote(col)
+                                            for col in executemany_cols),
+                                   db.parammarks(len(executemany_cols))))
 
             for ticket_id, in ticket_ids:
                 self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
@@ -471,7 +475,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             ticket_values[k] = "0"
 
                     ticket_values["_snapshottime"] = history_date
-                    insert_buffer = [ticket_values.get(column.name)
+                    insert_buffer = [ticket_values.get(column)
                                      for column in executemany_cols]
                     self.log.debug("insert_buffer is %s", insert_buffer)
                     execute_many_buffer.append(insert_buffer)
@@ -481,11 +485,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 self.log.debug("Inserting...")
                 # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
                 # and avoids any small differences in Python vs. SQL functions
-
-                cursor.executemany("INSERT INTO ticket_bi_historical (%s) VALUES (%s)"
-                                   % (','.join(executemany_cols),
-                                      db.parammarks(len(executemany_cols))),
-                              execute_many_buffer)
+                cursor.executemany(executemany_stmt, execute_many_buffer)
 
     def clear(self, force=False):
         if force != "force":
