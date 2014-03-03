@@ -170,13 +170,13 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             if 'custom' in field)
         empty_means_zero = set(field['name'] for field in ts.fields
                                if field.get('datatype', 'float')
-                                                in set('float', 'integer'))
+                                                in set(['float', 'integer']))
         built_in_fields = set(field['name'] for field in ts.fields
                               if 'custom' not in field
                               and 'link' not in field)
         history_table_cols = set(col.name for col in self.schema[0].columns)
         proto_values = dict.fromkeys(field
-                                     for field in built_in_fields + custom_fields
+                                     for field in built_in_fields | custom_fields
                                      if field in history_table_cols)
         # history table column names which are not fields from the ticket system
         history_columns = ['isclosed']
@@ -471,7 +471,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             ticket_values[k] = "0"
 
                     ticket_values["_snapshottime"] = history_date
-                    insert_buffer = [ticket_values.get(column.name)
+                    insert_buffer = [ticket_values.get(column)
                                      for column in executemany_cols]
                     self.log.debug("insert_buffer is %s", insert_buffer)
                     execute_many_buffer.append(insert_buffer)
