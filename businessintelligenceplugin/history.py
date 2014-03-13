@@ -2,6 +2,7 @@ from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
 from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
+from trac.config import BoolOption
 from trac.ticket.api import TicketSystem
 import psycopg2
 import os
@@ -15,6 +16,9 @@ class HistoryStorageSystem(Component):
 
     implements(IEnvironmentSetupParticipant,
                IAdminCommandProvider)
+
+    work_around_untracked_hours = BoolOption("businessintelligence", "work_around_untracked_hours", False,
+                                             doc="Work around the hours plugin changing totalhours and remaininghours without recording in ticket_change table")
 
     # IEnvironmentSetupParticipant
     _schema_version = 4
@@ -481,8 +485,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # delta-points, but we don't know for sure (for
                     # example) the value when the ticket was new.
 
-                    ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
-                    ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
+                    if self.work_around_untracked_hours:
+                        ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
+                        ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
                     for k in ticket_values:
                         if not ticket_values[k] and k in empty_means_zero:
