@@ -248,8 +248,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if only_ticket:
                 ticket_ids = [(int(only_ticket),)]
             else:
-                ticket_ids = db.cursor()
-                ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
+                ticket_ids_c = db.cursor()
+                ticket_ids_c.execute("SELECT id FROM ticket ORDER BY id")
+                ticket_ids = ticket_ids_c.fetchall()
 
             executemany_cols = [col.name for col in self.schema[0].columns]
             executemany_stmt = ("INSERT INTO ticket_bi_historical (%s) "
@@ -257,12 +258,22 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                 % (','.join(db.quote(col)
                                             for col in executemany_cols),
                                    db.parammarks(len(executemany_cols))))
-
+            
+            eta_prediction__start_time = datetime.datetime.now()
+            eta_prediction__done  = 0
+            eta_prediction__total = len(ticket_ids)
             for ticket_id, in ticket_ids:
-                self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
+                try:
+                    eta_prediction = eta_prediction__start_time + ((datetime.datetime.now() - eta_prediction__start_time) / eta_prediction__done) * eta_prediction__total
+                except ZeroDivisionError:
+                    eta_prediction = None
+                self.log.info("Working on (after) %s to (end of) %s for ticket %d/%d - ETA %s", 
                               last_snapshot,
                               until,
-                              ticket_id)
+                              ticket_id,
+                              eta_prediction__total,
+                              eta_prediction)
+                eta_prediction__done += 1
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = proto_values.copy()
