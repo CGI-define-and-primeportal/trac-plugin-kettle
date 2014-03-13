@@ -155,6 +155,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 #release lock
                 fcntl.flock(lock_file, fcntl.LOCK_UN)
                 lock_file.close()
+                os.unlink(lock_path)
+                
 
     def _capture(self, until_str=None, only_ticket=None):
         yesterday = datetime.date.today() - datetime.timedelta(days = 1)
