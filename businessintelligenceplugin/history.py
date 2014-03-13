@@ -312,8 +312,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                % db.parammarks(len(ticket_values)),
                                [ticket_id]
                                + ticket_values.keys()
-                               + [to_utimestamp(startofday(history_date)),
-                                  to_utimestamp(startofnextday(until)),
+                               + [memoized_to_utimestamp(startofday(history_date)),
+                                  memoized_to_utimestamp(startofnextday(until)),
                                   ]
                                )
                 ticket_changes =[(from_utimestamp(time), field, newvalue)
@@ -324,7 +324,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 def _calculate_totalhours_on_date(date):
                     cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
-                               to_timestamp(startofnextday(date))))
+                               memoized_to_timestamp(startofnextday(date))))
                     result = cursor.fetchone()
                     return result[0] if result else 0
 
@@ -334,12 +334,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
                               (ticket_values['id'],
-                               to_utimestamp(nextdate)))
+                               memoized_to_utimestamp(nextdate)))
                     next_known = cursor.fetchone()
                     cursor.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
                               (ticket_values['id'],
-                               to_utimestamp(nextdate)))
+                               memoized_to_utimestamp(nextdate)))
                     previous_known = cursor.fetchone()
                     cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
@@ -396,8 +396,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
-                                   to_timestamp(nextdate),
-                                   to_timestamp(best_candidate[1])))
+                                   memoized_to_timestamp(nextdate),
+                                   memoized_to_timestamp(best_candidate[1])))
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
@@ -423,8 +423,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
-                                   to_timestamp(best_candidate[1]),
-                                   to_timestamp(nextdate)))
+                                   memoized_to_timestamp(best_candidate[1]),
+                                   memoized_to_timestamp(nextdate)))
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] - (result[0]/3600.0)
@@ -469,6 +469,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # some known data-points, and some known
                     # delta-points, but we don't know for sure (for
                     # example) the value when the ticket was new.
+
                     ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
                     ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
@@ -500,12 +501,31 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             cursor.execute("TRUNCATE ticket_bi_historical")
 
 
+# http://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/
+def memodict(f):
+    """ Memoization decorator for a function taking a single argument """
+    class memodict(dict):
+        def __missing__(self, key):
+            ret = self[key] = f(key)
+            return ret 
+    return memodict().__getitem__
+
+@memodict
+def memoized_to_timestamp(o):
+    return to_timestamp(o)
+
+@memodict
+def memoized_to_utimestamp(o):
+    return to_utimestamp(o)
+
+@memodict
 def startofday(date):
     if date:
         return datetime.datetime.combine(date, datetime.time(tzinfo=utc))
     else:
         return None
 
+@memodict
 def startofnextday(date):
     if date:
         return datetime.datetime.combine(date + datetime.timedelta(days=1),
