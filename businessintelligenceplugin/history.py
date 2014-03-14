@@ -8,6 +8,8 @@ import psycopg2
 import os
 import datetime
 import types
+import itertools
+from cStringIO import StringIO
 from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
 from logicaordertracker.controller import LogicaOrderController
 
@@ -187,7 +189,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         built_in_fields = set(field['name'] for field in ts.fields
                               if 'custom' not in field
                               and 'link' not in field)
-        history_table_cols = set(col.name for col in self.schema[0].columns)
+        history_table_cols = [col.name for col in self.schema[0].columns]
         proto_values = dict.fromkeys(field
                                      for field in built_in_fields | custom_fields
                                      if field in history_table_cols)
@@ -211,23 +213,24 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         if column in built_in_fields:
                             cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
                             result = cursor.fetchone()
+                            ticket_values[column] = encode_and_escape(unicode(result[0]))
                         else:
                             cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
                             result = cursor.fetchone()
-                        if result:
-                            ticket_values[column] = result[0]
-                        else:
-                            ticket_values[column] = None
+                            if result:
+                                ticket_values[column] = encode_and_escape(result[0])
+                            else:
+                                ticket_values[column] = 'None'
                     else:
-                        ticket_values[column] = result[0]
+                        ticket_values[column] = encode_and_escape(result[0])
 
-                ticket_values['id'] = ticket_id
-                ticket_values['time'] = ticket_created
-                ticket_values['changetime'] = ticket_created
-                ticket_values['_resolutiontime'] = None
+                ticket_values['id'] = str(ticket_id)
+                ticket_values['time'] = str(ticket_created)
+                ticket_values['changetime'] = str(ticket_created)
+                ticket_values['_resolutiontime'] = 'None'
                 # assumption that you cannot create a ticket in status closed
                 # so we give isclosed a false value from the off
-                ticket_values['isclosed'] = 0
+                ticket_values['isclosed'] = "0"
 
                 # PROBLEM: How can we detect when a milestone was renamed (and
                 # tickets updated) - this isn't mentioned in the ticket_change
@@ -263,13 +266,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids_c.execute("SELECT id FROM ticket ORDER BY id")
                 ticket_ids = ticket_ids_c.fetchall()
 
-            executemany_cols = [col.name for col in self.schema[0].columns]
-            executemany_stmt = ("INSERT INTO ticket_bi_historical (%s) "
-                                "VALUES (%s)"
-                                % (','.join(db.quote(col)
-                                            for col in executemany_cols),
-                                   db.parammarks(len(executemany_cols))))
-            
+            copy_data_buffer = StringIO()
+
             eta_prediction__start_time = datetime.datetime.now()
             eta_prediction__done  = 0
             eta_prediction__total = len(ticket_ids)
@@ -317,7 +315,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                 else:
                                     ticket_values[k] = ''
 
-                        ticket_values['id'] = ticket_id
+                        ticket_values['id'] = str(ticket_id)
 
                 else:
                     # first time we've run the history capture script
@@ -463,26 +461,25 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     self.log.warn("Returning default of 0 for remaininghours")
                     return 0
 
-                execute_many_buffer = []
                 while history_date <= until:
                     active_changes = {}
                     for time, field, newvalue in ticket_changes:
                         if time < startofnextday(history_date):
                             # finding the newest change for each field, which is older than or equal to history_date
                             self.log.debug("On %s, saw setting %s to %s", time, field, newvalue)
-                            active_changes[field] = newvalue
-                            active_changes['changetime'] = time
+                            active_changes[field] = encode_and_escape(newvalue)
+                            active_changes['changetime'] = str(time)
                             if field == "resolution":
-                                active_changes['_resolutiontime'] = time
+                                active_changes['_resolutiontime'] = str(time)
                             # work out if the new status is in a statusgroup with the attr closed='True'
                             if field == 'status':
-                                s = closed_statuses[ticket_values['type']]
+                                s = closed_statuses[unencode_and_unescape(ticket_values['type'])]
                                 if newvalue in s:
                                     self.log.debug("Recognising ticket as closed due to %s in %s", newvalue, s)
-                                    active_changes['isclosed'] = 1
+                                    active_changes['isclosed'] = "1"
                                 else:
                                     self.log.debug("Recognising ticket as open due to %s not in %s", newvalue, s)
-                                    active_changes['isclosed'] = 0
+                                    active_changes['isclosed'] = "0"
 
                     ticket_values.update(active_changes)
                     # these are pretty hard to calculate,
@@ -500,18 +497,39 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         if not ticket_values[k] and k in empty_means_zero:
                             ticket_values[k] = "0"
 
-                    ticket_values["_snapshottime"] = history_date
-                    insert_buffer = [ticket_values.get(column)
-                                     for column in executemany_cols]
-                    self.log.debug("insert_buffer is %s", insert_buffer)
-                    execute_many_buffer.append(insert_buffer)
+                    ticket_values["_snapshottime"] = str(history_date)
+                    #for k, v in ticket_values.items():
+                    #    print k, v, type(v)
+
+                    for column in notlast(history_table_cols):
+                        #print column
+                        #print ticket_values.get(column)
+                        try:
+                            copy_data_buffer.write(ticket_values[column])
+                        except KeyError:
+                            copy_data_buffer.write("None")
+                        copy_data_buffer.write("\t")
+                    copy_data_buffer.write(ticket_values[history_table_cols[-1]])
+                    copy_data_buffer.write("\n")
 
                     history_date = history_date + datetime.timedelta(days=1)
 
-                self.log.debug("Inserting...")
-                # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
-                # and avoids any small differences in Python vs. SQL functions
-                cursor.executemany(executemany_stmt, execute_many_buffer)
+                if copy_data_buffer.tell() > 51916800: # 50 MB, randomly chosen
+                    self.log.info("Flushing to table with COPY...")
+                    copy_data_buffer.seek(0)
+                    cursor.copy_from(copy_data_buffer,
+                                     table='ticket_bi_historical',
+                                     sep='\t',
+                                     null='None',
+                                     columns=history_table_cols)
+                    copy_data_buffer = StringIO()
+            self.log.info("Final flushing to table with COPY...")
+            copy_data_buffer.seek(0)
+            cursor.copy_from(copy_data_buffer,
+                             table='ticket_bi_historical',
+                             sep='\t',
+                             null='None',
+                             columns=history_table_cols)
 
     def clear(self, force=False):
         if force != "force":
@@ -555,3 +573,14 @@ def startofnextday(date):
                                          datetime.time(tzinfo=utc))
     else:
         return None
+
+@memodict
+def encode_and_escape(o):
+    return o.encode('utf-8').encode('string_escape')
+
+@memodict
+def unencode_and_unescape(o):
+    return o.decode('string_escape').decode('utf8')
+
+# http://stackoverflow.com/questions/2429098/how-to-treat-the-last-element-in-list-differently-in-python
+notlast = lambda lst:itertools.islice(lst, 0, len(lst)-1)
