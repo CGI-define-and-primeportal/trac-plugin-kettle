@@ -171,6 +171,10 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if until > yesterday:
                 raise ValueError("Can't process any newer than %s" % yesterday)
 
+        if self.env.config.get('trac', 'debug_sql'):
+            self.log.warning("Temporarily disabling [trac]debug_sql")
+            self.env.config.set('trac', 'debug_sql', False)
+
         ts = TicketSystem(self.env)
         custom_fields = set(field['name'] for field in ts.fields
                             if 'custom' in field)
