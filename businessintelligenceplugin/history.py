@@ -171,6 +171,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if until > yesterday:
                 raise ValueError("Can't process any newer than %s" % yesterday)
 
+        # avoid looking this up in the config so much - profiling say's it's a hot point
+        work_around_untracked_hours = bool(self.work_around_untracked_hours)
+
         if self.env.config.get('trac', 'debug_sql'):
             self.log.warning("Temporarily disabling [trac]debug_sql")
             self.env.config.set('trac', 'debug_sql', False)
@@ -489,7 +492,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # delta-points, but we don't know for sure (for
                     # example) the value when the ticket was new.
 
-                    if self.work_around_untracked_hours:
+                    if work_around_untracked_hours:
                         ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
                         ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
