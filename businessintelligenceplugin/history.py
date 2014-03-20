@@ -490,8 +490,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # example) the value when the ticket was new.
 
                     if work_around_untracked_hours:
-                        ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
-                        ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
+                        ticket_values['totalhours'] = str(_calculate_totalhours_on_date(history_date))
+                        ticket_values['remaininghours'] = str(_calculate_remaininghours_on_date(history_date))
 
                     for k in ticket_values:
                         if not ticket_values[k] and k in empty_means_zero:
