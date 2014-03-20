@@ -2,14 +2,11 @@ from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
 from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
-from trac.config import BoolOption
 from trac.ticket.api import TicketSystem
 import psycopg2
 import os
 import datetime
 import types
-import itertools
-from cStringIO import StringIO
 from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
 from logicaordertracker.controller import LogicaOrderController
 
@@ -18,9 +15,6 @@ class HistoryStorageSystem(Component):
 
     implements(IEnvironmentSetupParticipant,
                IAdminCommandProvider)
-
-    work_around_untracked_hours = BoolOption("businessintelligence", "work_around_untracked_hours", False,
-                                             doc="Work around the hours plugin changing totalhours and remaininghours without recording in ticket_change table")
 
     # IEnvironmentSetupParticipant
     _schema_version = 4
@@ -171,13 +165,6 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if until > yesterday:
                 raise ValueError("Can't process any newer than %s" % yesterday)
 
-        # avoid looking this up in the config so much - profiling say's it's a hot point
-        work_around_untracked_hours = bool(self.work_around_untracked_hours)
-
-        if self.env.config.get('trac', 'debug_sql'):
-            self.log.warning("Temporarily disabling [trac]debug_sql")
-            self.env.config.set('trac', 'debug_sql', False)
-
         ts = TicketSystem(self.env)
         custom_fields = set(field['name'] for field in ts.fields
                             if 'custom' in field)
@@ -187,7 +174,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         built_in_fields = set(field['name'] for field in ts.fields
                               if 'custom' not in field
                               and 'link' not in field)
-        history_table_cols = [col.name for col in self.schema[0].columns]
+        history_table_cols = set(col.name for col in self.schema[0].columns)
         proto_values = dict.fromkeys(field
                                      for field in built_in_fields | custom_fields
                                      if field in history_table_cols)
@@ -211,24 +198,23 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         if column in built_in_fields:
                             cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
                             result = cursor.fetchone()
-                            ticket_values[column] = encode_and_escape(unicode(result[0]))
                         else:
                             cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
                             result = cursor.fetchone()
-                            if result:
-                                ticket_values[column] = encode_and_escape(result[0])
-                            else:
-                                ticket_values[column] = 'None'
+                        if result:
+                            ticket_values[column] = result[0]
+                        else:
+                            ticket_values[column] = None
                     else:
-                        ticket_values[column] = encode_and_escape(result[0])
+                        ticket_values[column] = result[0]
 
-                ticket_values['id'] = str(ticket_id)
-                ticket_values['time'] = str(ticket_created)
-                ticket_values['changetime'] = str(ticket_created)
-                ticket_values['_resolutiontime'] = 'None'
+                ticket_values['id'] = ticket_id
+                ticket_values['time'] = ticket_created
+                ticket_values['changetime'] = ticket_created
+                ticket_values['_resolutiontime'] = None
                 # assumption that you cannot create a ticket in status closed
                 # so we give isclosed a false value from the off
-                ticket_values['isclosed'] = "0"
+                ticket_values['isclosed'] = 0
 
                 # PROBLEM: How can we detect when a milestone was renamed (and
                 # tickets updated) - this isn't mentioned in the ticket_change
@@ -260,27 +246,21 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             if only_ticket:
                 ticket_ids = [(int(only_ticket),)]
             else:
-                ticket_ids_c = db.cursor()
-                ticket_ids_c.execute("SELECT id FROM ticket ORDER BY id")
-                ticket_ids = ticket_ids_c.fetchall()
+                ticket_ids = db.cursor()
+                ticket_ids.execute("SELECT id FROM ticket ORDER BY id")
 
-            copy_data_buffer = StringIO()
+            executemany_cols = [col.name for col in self.schema[0].columns]
+            executemany_stmt = ("INSERT INTO ticket_bi_historical (%s) "
+                                "VALUES (%s)"
+                                % (','.join(db.quote(col)
+                                            for col in executemany_cols),
+                                   db.parammarks(len(executemany_cols))))
 
-            eta_prediction__start_time = datetime.datetime.now()
-            eta_prediction__done  = 0
-            eta_prediction__total = len(ticket_ids)
             for ticket_id, in ticket_ids:
-                try:
-                    eta_prediction = eta_prediction__start_time + ((datetime.datetime.now() - eta_prediction__start_time) / eta_prediction__done) * eta_prediction__total
-                except ZeroDivisionError:
-                    eta_prediction = None
-                self.log.info("Working on (after) %s to (end of) %s for ticket %d/%d - ETA %s", 
+                self.log.info("Working on (after) %s to (end of) %s for ticket %d", 
                               last_snapshot,
                               until,
-                              ticket_id,
-                              eta_prediction__total,
-                              eta_prediction)
-                eta_prediction__done += 1
+                              ticket_id)
 
                 # set up a dictionary to hold the value of the ticket fields, which will change as we step forward in time
                 ticket_values = proto_values.copy()
@@ -313,7 +293,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                 else:
                                     ticket_values[k] = ''
 
-                        ticket_values['id'] = str(ticket_id)
+                        ticket_values['id'] = ticket_id
 
                 else:
                     # first time we've run the history capture script
@@ -330,8 +310,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                % db.parammarks(len(ticket_values)),
                                [ticket_id]
                                + ticket_values.keys()
-                               + [memoized_to_utimestamp(startofday(history_date)),
-                                  memoized_to_utimestamp(startofnextday(until)),
+                               + [to_utimestamp(startofday(history_date)),
+                                  to_utimestamp(startofnextday(until)),
                                   ]
                                )
                 ticket_changes =[(from_utimestamp(time), field, newvalue)
@@ -342,7 +322,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 def _calculate_totalhours_on_date(date):
                     cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
-                               memoized_to_timestamp(startofnextday(date))))
+                               to_timestamp(startofnextday(date))))
                     result = cursor.fetchone()
                     return result[0] if result else 0
 
@@ -352,12 +332,12 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time >= %s ORDER BY time ASC LIMIT 1",
                               (ticket_values['id'],
-                               memoized_to_utimestamp(nextdate)))
+                               to_utimestamp(nextdate)))
                     next_known = cursor.fetchone()
                     cursor.execute("SELECT to_timestamp(time / 1000000), newvalue FROM ticket_change WHERE "
                               "field = 'remaininghours' AND ticket = %s AND time < %s ORDER BY time DESC LIMIT 1",
                               (ticket_values['id'],
-                               memoized_to_utimestamp(nextdate)))
+                               to_utimestamp(nextdate)))
                     previous_known = cursor.fetchone()
                     cursor.execute("SELECT now(), value FROM ticket_custom WHERE ticket = %s AND name = 'remaininghours'",
                               (ticket_values['id'],))
@@ -414,8 +394,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
-                                   memoized_to_timestamp(nextdate),
-                                   memoized_to_timestamp(best_candidate[1])))
+                                   to_timestamp(nextdate),
+                                   to_timestamp(best_candidate[1])))
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] + (result[0]/3600.0)
@@ -441,8 +421,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         cursor.execute("SELECT SUM(seconds_worked) FROM ticket_time WHERE "
                                   "ticket = %s AND time_started >= %s AND time_started < %s",
                                   (ticket_values['id'],
-                                   memoized_to_timestamp(best_candidate[1]),
-                                   memoized_to_timestamp(nextdate)))
+                                   to_timestamp(best_candidate[1]),
+                                   to_timestamp(nextdate)))
                         result = cursor.fetchone()
                         if result and result[0]:
                             r = best_candidate[2] - (result[0]/3600.0)
@@ -459,25 +439,26 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     self.log.warn("Returning default of 0 for remaininghours")
                     return 0
 
+                execute_many_buffer = []
                 while history_date <= until:
                     active_changes = {}
                     for time, field, newvalue in ticket_changes:
                         if time < startofnextday(history_date):
                             # finding the newest change for each field, which is older than or equal to history_date
                             self.log.debug("On %s, saw setting %s to %s", time, field, newvalue)
-                            active_changes[field] = encode_and_escape(newvalue)
-                            active_changes['changetime'] = str(time)
+                            active_changes[field] = newvalue
+                            active_changes['changetime'] = time
                             if field == "resolution":
-                                active_changes['_resolutiontime'] = str(time)
+                                active_changes['_resolutiontime'] = time
                             # work out if the new status is in a statusgroup with the attr closed='True'
                             if field == 'status':
-                                s = closed_statuses[unencode_and_unescape(ticket_values['type'])]
+                                s = closed_statuses[ticket_values['type']]
                                 if newvalue in s:
                                     self.log.debug("Recognising ticket as closed due to %s in %s", newvalue, s)
-                                    active_changes['isclosed'] = "1"
+                                    active_changes['isclosed'] = 1
                                 else:
                                     self.log.debug("Recognising ticket as open due to %s not in %s", newvalue, s)
-                                    active_changes['isclosed'] = "0"
+                                    active_changes['isclosed'] = 0
 
                     ticket_values.update(active_changes)
                     # these are pretty hard to calculate,
@@ -486,48 +467,25 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # some known data-points, and some known
                     # delta-points, but we don't know for sure (for
                     # example) the value when the ticket was new.
-
-                    if work_around_untracked_hours:
-                        ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
-                        ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
+                    ticket_values['totalhours'] = _calculate_totalhours_on_date(history_date)
+                    ticket_values['remaininghours'] = _calculate_remaininghours_on_date(history_date)
 
                     for k in ticket_values:
                         if not ticket_values[k] and k in empty_means_zero:
                             ticket_values[k] = "0"
 
-                    ticket_values["_snapshottime"] = str(history_date)
-                    #for k, v in ticket_values.items():
-                    #    print k, v, type(v)
-
-                    for column in notlast(history_table_cols):
-                        #print column
-                        #print ticket_values.get(column)
-                        try:
-                            copy_data_buffer.write(ticket_values[column])
-                        except KeyError:
-                            copy_data_buffer.write("None")
-                        copy_data_buffer.write("\t")
-                    copy_data_buffer.write(ticket_values[history_table_cols[-1]])
-                    copy_data_buffer.write("\n")
+                    ticket_values["_snapshottime"] = history_date
+                    insert_buffer = [ticket_values.get(column)
+                                     for column in executemany_cols]
+                    self.log.debug("insert_buffer is %s", insert_buffer)
+                    execute_many_buffer.append(insert_buffer)
 
                     history_date = history_date + datetime.timedelta(days=1)
 
-                if copy_data_buffer.tell() > 51916800: # 50 MB, randomly chosen
-                    self.log.info("Flushing to table with COPY...")
-                    copy_data_buffer.seek(0)
-                    cursor.copy_from(copy_data_buffer,
-                                     table='ticket_bi_historical',
-                                     sep='\t',
-                                     null='None',
-                                     columns=history_table_cols)
-                    copy_data_buffer = StringIO()
-            self.log.info("Final flushing to table with COPY...")
-            copy_data_buffer.seek(0)
-            cursor.copy_from(copy_data_buffer,
-                             table='ticket_bi_historical',
-                             sep='\t',
-                             null='None',
-                             columns=history_table_cols)
+                self.log.debug("Inserting...")
+                # we do as much as possible of the transformations in SQL, so that it matches the ticket_bi_current view
+                # and avoids any small differences in Python vs. SQL functions
+                cursor.executemany(executemany_stmt, execute_many_buffer)
 
     def clear(self, force=False):
         if force != "force":
@@ -540,45 +498,15 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             cursor.execute("TRUNCATE ticket_bi_historical")
 
 
-# http://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/
-def memodict(f):
-    """ Memoization decorator for a function taking a single argument """
-    class memodict(dict):
-        def __missing__(self, key):
-            ret = self[key] = f(key)
-            return ret 
-    return memodict().__getitem__
-
-@memodict
-def memoized_to_timestamp(o):
-    return to_timestamp(o)
-
-@memodict
-def memoized_to_utimestamp(o):
-    return to_utimestamp(o)
-
-@memodict
 def startofday(date):
     if date:
         return datetime.datetime.combine(date, datetime.time(tzinfo=utc))
     else:
         return None
 
-@memodict
 def startofnextday(date):
     if date:
         return datetime.datetime.combine(date + datetime.timedelta(days=1),
                                          datetime.time(tzinfo=utc))
     else:
         return None
-
-@memodict
-def encode_and_escape(o):
-    return o.encode('utf-8').encode('string_escape')
-
-@memodict
-def unencode_and_unescape(o):
-    return o.decode('string_escape').decode('utf8')
-
-# http://stackoverflow.com/questions/2429098/how-to-treat-the-last-element-in-list-differently-in-python
-notlast = lambda lst:itertools.islice(lst, 0, len(lst)-1)
