@@ -576,11 +576,17 @@ def startofnextday(date):
 
 @memodict
 def encode_and_escape(o):
-    return o.encode('utf-8').encode('string_escape')
+    if o is None:
+        return u'None'
+    else:
+        return o.encode('utf-8').encode('string_escape')
 
 @memodict
 def unencode_and_unescape(o):
-    return o.decode('string_escape').decode('utf8')
+    if o == u'None':
+        return None
+    else:
+        return o.decode('string_escape').decode('utf8')
 
 # http://stackoverflow.com/questions/2429098/how-to-treat-the-last-element-in-list-differently-in-python
 notlast = lambda lst:itertools.islice(lst, 0, len(lst)-1)
