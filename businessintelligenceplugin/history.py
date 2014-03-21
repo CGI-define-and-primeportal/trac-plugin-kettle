@@ -220,14 +220,14 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             if result:
                                 ticket_values[column] = encode_and_escape(result[0])
                             else:
-                                ticket_values[column] = 'None'
+                                ticket_values[column] = r'\N'
                     else:
                         ticket_values[column] = encode_and_escape(result[0])
 
                 ticket_values['id'] = str(ticket_id)
                 ticket_values['time'] = str(ticket_created)
                 ticket_values['changetime'] = str(ticket_created)
-                ticket_values['_resolutiontime'] = 'None'
+                ticket_values['_resolutiontime'] = r'\N'
                 # assumption that you cannot create a ticket in status closed
                 # so we give isclosed a false value from the off
                 ticket_values['isclosed'] = "0"
@@ -520,7 +520,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     cursor.copy_from(copy_data_buffer,
                                      table='ticket_bi_historical',
                                      sep='\t',
-                                     null='None',
+                                     null=r'\N',
                                      columns=history_table_cols)
                     copy_data_buffer = StringIO()
             self.log.info("Final flushing to table with COPY...")
@@ -528,7 +528,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             cursor.copy_from(copy_data_buffer,
                              table='ticket_bi_historical',
                              sep='\t',
-                             null='None',
+                             null=r'\N',
                              columns=history_table_cols)
 
     def clear(self, force=False):
@@ -577,13 +577,16 @@ def startofnextday(date):
 @memodict
 def encode_and_escape(o):
     if o is None:
-        return u'None'
+        return r'\N'
     else:
+        # http://www.postgresql.org/docs/8.1/static/sql-copy.html
+        # http://docs.python.org/2/reference/lexical_analysis.html#string-literals
+        # http://initd.org/psycopg/docs/cursor.html#cursor.copy_expert
         return o.encode('utf-8').encode('string_escape')
 
 @memodict
 def unencode_and_unescape(o):
-    if o == u'None':
+    if o == r'\N':
         return None
     else:
         return o.decode('string_escape').decode('utf8')
