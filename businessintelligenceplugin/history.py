@@ -213,7 +213,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         if column in built_in_fields:
                             cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
                             result = cursor.fetchone()
-                            ticket_values[column] = encode_and_escape(unicode(result[0]))
+                            ticket_values[column] = encode_and_escape(result[0])
                         else:
                             cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
                             result = cursor.fetchone()
@@ -490,8 +490,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # example) the value when the ticket was new.
 
                     if work_around_untracked_hours:
-                        ticket_values['totalhours'] = str(_calculate_totalhours_on_date(history_date))
-                        ticket_values['remaininghours'] = str(_calculate_remaininghours_on_date(history_date))
+                        ticket_values['totalhours'] = encode_and_escape(_calculate_totalhours_on_date(history_date))
+                        ticket_values['totalhours'] = encode_and_escape(_calculate_totalhours_on_date(history_date))
 
                     for k in ticket_values:
                         if not ticket_values[k] and k in empty_means_zero:
@@ -507,7 +507,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                         try:
                             copy_data_buffer.write(ticket_values[column])
                         except KeyError:
-                            copy_data_buffer.write("None")
+                            copy_data_buffer.write(r'\N')
                         copy_data_buffer.write("\t")
                     copy_data_buffer.write(ticket_values[history_table_cols[-1]])
                     copy_data_buffer.write("\n")
@@ -582,13 +582,15 @@ def encode_and_escape(o):
         # http://www.postgresql.org/docs/8.1/static/sql-copy.html
         # http://docs.python.org/2/reference/lexical_analysis.html#string-literals
         # http://initd.org/psycopg/docs/cursor.html#cursor.copy_expert
-        return o.encode('utf-8').encode('string_escape')
+        return unicode(o).encode('utf-8').encode('string_escape')
 
 @memodict
 def unencode_and_unescape(o):
     if o == r'\N':
         return None
     else:
+        # not entirely symmetric - this gives strings, but
+        # encode_and_escape() would take non-strings too. This is OK.
         return o.decode('string_escape').decode('utf8')
 
 # http://stackoverflow.com/questions/2429098/how-to-treat-the-last-element-in-list-differently-in-python
