@@ -36,6 +36,7 @@ class SpoonExecutor(Component):
                                  cwd=resource_filename(__name__, 'pentaho-data-integration'),
                                  env={'PENTAHO_DI_JAVA_OPTIONS': "-Dfile.encoding=utf8 -Dorg.osjava.sj.root=%s" % os.path.join(tempdir,"simple-jndi"),
                                       'DISPLAY': os.environ['DISPLAY'],
+                                      'LANG': "en_US.UTF-8",
                                       'HOME': os.environ['HOME']})
 
         spoon.wait()
