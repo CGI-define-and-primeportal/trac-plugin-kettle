@@ -244,7 +244,8 @@ class TransformExecutor(Component):
             reponame, repos, path = RepositoryManager(self.env).get_repository_by_path('')
             svn_writer = SubversionWriter(self.env, repos, "reporting")
             revs = []
-            for filename in os.listdir(os.path.join(tempdir, "svn")):
+            for filename_encoded in os.listdir(os.path.join(tempdir, "svn")):
+                filename = filename_encoded.decode('utf-8') # we wrote the filename out ourselves
                 self.log.info("Uploading %s", filename)
                 writer = SubversionWriter(self.env, repos, "reporting")
                 file_data = open(os.path.join(os.path.join(tempdir, "svn"), filename)).read()
