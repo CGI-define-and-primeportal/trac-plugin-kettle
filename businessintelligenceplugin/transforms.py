@@ -292,7 +292,7 @@ class TransformExecutor(Component):
                 for dirname, dirs, files in os.walk(src):
                     for f in files:
                         if not output_filename in f:
-                            absname = os.path.abspath(os.path.join(dirname, f))
+                            absname = os.path.abspath(os.path.join(dirname, f.decode('utf-8')))
                             arcname = absname[len(src) + 1:]
                             z.write(absname,arcname)
                 z.close()
