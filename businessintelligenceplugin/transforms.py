@@ -1,10 +1,13 @@
 from trac.admin import IAdminCommandProvider
-from trac.core import Component, implements
+from trac.core import Component, implements, TracError
 from trac.versioncontrol.api import RepositoryManager, NoSuchNode
 from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler, RequestDone, HTTPNotFound 
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav
 from trac.util import content_disposition
+from trac.util.datefmt import to_utimestamp
+from trac.util.presentation import to_json
+
 
 from tracrpc.api import IXMLRPCHandler, Binary
 
@@ -13,10 +16,13 @@ from genshi.builder import tag
 from trac_browser_svn_ops.svn_fs import SubversionWriter
 from contextmenu.contextmenu import ISourceBrowserContextMenuProvider
 
+from datetime import datetime
+import uuid
 import types
 import glob
 import os
 from lxml import etree
+import pytz
 import tempfile
 import shutil
 import subprocess
@@ -43,6 +49,7 @@ class TransformExecutor(Component):
 
     def process_request(self, req):
         if 'action' in req.args:
+            transform_id = str(uuid.uuid4())
             parameters = {}
             for k in req.args:
                 if k.startswith("parameter:"):
@@ -51,11 +58,16 @@ class TransformExecutor(Component):
                     parameters[parameter_name] = parameter_value
             req.perm.require("BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE")
             if req.args['action'] == "execute_async":
+                # execute the transformation 
                 thread.start_new_thread(self._do_execute_transformation, 
                                         (req.args['transform'],), 
-                                        {'parameters': parameters})
+                                        {'transformation_id': transform_id, 'parameters': parameters})
+                # send transform_id generated via uuid back to JS via JSON
+                # we have to do this after we invoke a new thread as req.send()
+                # returns from this function and stops further flow control
+                req.send(to_json({'transform_id': transform_id}), 'text/json')
             elif req.args['action'] == "execute_download":
-                filename, stat, filestream = self._do_execute_transformation(req.args['transform'], store=False, return_bytes_handle=True, parameters=parameters)
+                filename, stat, filestream = self._do_execute_transformation(req.args['transform'], transformation_id=transform_id, store=False, return_bytes_handle=True, parameters=parameters)
                 req.send_response(200)
                 req.send_header('Content-Type', mimetypes.guess_type(filename)[0] or 'application/octet-stream')
                 req.send_header('Content-Length', stat.st_size)
@@ -70,7 +82,7 @@ class TransformExecutor(Component):
                 raise RequestDone
 
             elif req.args['action'] == "execute":
-                self._do_execute_transformation(req.args['transform'], parameters=parameters)
+                self._do_execute_transformation(req.args['transform'], transformation_id=transform_id, parameters=parameters)
             else:
                 add_warning(req, "No valid action found")
                 req.redirect(req.href.businessintelligence())
@@ -139,7 +151,8 @@ class TransformExecutor(Component):
     def _do_execute(self, transformation, *args):
         # change to a safe CWD (as subversion commit hooks will want to "chdir(.)" before they execute
         parameters = dict(zip(args[::2], args[1::2]))
-        print "Generated revisions %s" % self._do_execute_transformation(transformation, listall=True, changecwd=True, parameters=parameters)
+        print "Generated revisions %s" % self._do_execute_transformation(transformation, transformation_id=str(uuid.uuid4()),
+                                                                         listall=True, changecwd=True, parameters=parameters)
 
     # IXMLRPCHandler methods
     def xmlrpc_namespace(self):
@@ -180,7 +193,9 @@ class TransformExecutor(Component):
 
     #####
 
-    def _do_execute_transformation(self, transformation, store=True, return_bytes_handle=False, changecwd=False, listall=False, parameters=None):
+    def _do_execute_transformation(self, transformation, transformation_id=None, 
+                                   store=True, return_bytes_handle=False, 
+                                   changecwd=False, listall=False, parameters=None):
         tempdir = tempfile.mkdtemp()
         if changecwd:
             os.chdir(tempdir)
@@ -219,6 +234,17 @@ class TransformExecutor(Component):
 
         self.log.debug("Running %s with %s", executable, args)
 
+        if transformation_id:
+            # See https://d4.define.logica.com/ticket/4375#comment:7
+            db = self.env.get_read_db()
+            @self.env.with_transaction()
+            def do_insert(db):
+                cursor = db.cursor()
+                self.env.log.debug("Updating running_transformations - inserting new row for %s",
+                                    transformation_id)
+                cursor.execute("""INSERT INTO running_transformations (transformation_id, status, started)
+                                  VALUES (%s, %s, %s)""", (transformation_id, "running", to_utimestamp(datetime.now(pytz.utc))))
+
         # this bit of Python isn't so good :-( I'll just merge the stdout and stderr streams...
 
         # http://stackoverflow.com/questions/6809590/merging-a-python-scripts-subprocess-stdout-and-stderr-while-keeping-them-disti
@@ -238,7 +264,31 @@ class TransformExecutor(Component):
         self.log.info("Script returned %s", script.returncode)
 
         if script.returncode:
+
+            # transform has failed to complete - update bi_logging table
+            if transformation_id:
+                @self.env.with_transaction()
+                def do_insert(db):
+                    cursor = db.cursor()
+                    self.env.log.debug("Updating running_transformations - %s failed to complete",
+                                        transformation_id)
+                    cursor.execute("""UPDATE running_transformations
+                                      SET transformation_id=%s, status=%s
+                                      WHERE id_batch=%s""", (transformation_id, "error", transformation_id))
+
             raise RuntimeError("Business Intelligence subprocess script failed")
+
+        # We know assume that the transform has finished successfully
+        # so we update the bi_logging table to represent this
+        if transformation_id:
+            @self.env.with_transaction()
+            def do_insert(db):
+                cursor = db.cursor()
+                self.env.log.debug("Updating running_transformations - %s completed",
+                                    transformation_id)
+                cursor.execute("""UPDATE running_transformations
+                                  SET transformation_id=%s, status=%s, ended=%s
+                                  WHERE transformation_id=%s""", (transformation_id, "success", to_utimestamp(datetime.now(pytz.utc)), transformation_id))
 
         if store:
             reponame, repos, path = RepositoryManager(self.env).get_repository_by_path('')

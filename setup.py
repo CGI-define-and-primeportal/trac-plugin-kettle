@@ -55,6 +55,7 @@ setup(
             'businessintelligenceplugin.spoon = businessintelligenceplugin.spoon',
             'businessintelligenceplugin.carte = businessintelligenceplugin.carte',
             'businessintelligenceplugin.history = businessintelligenceplugin.history',
+            'businessintelligenceplugin.logging = businessintelligenceplugin.logging',
         ]
     }
 )

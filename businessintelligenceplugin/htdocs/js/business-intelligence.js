@@ -1,4 +1,12 @@
 $(document).ready(function() {
+  // setting global variable so we can access later in local scope
+  var transformation_id,
+      transform_name,
+      transform_wrapper,
+      execute_btn_handler,
+      group_label,
+      timeout_browser;
+
   $("#content").find("h2").addAnchor(_("Link to this section"));
 
   $('.toggle-parameters-form').click(function(e) {
@@ -37,8 +45,12 @@ $(document).ready(function() {
               clearTimeout(specific_elem.data("timeout"));
               specific_elem.data("n", 0);
               $(".execute-actions .btn", specific_elem).removeClass("disabled");
-              $(".execute-actions .btn:first", specific_elem).html("<i class='icon-bolt'></i> Execute");
+              $(".execute-actions .btn:first", specific_elem).html("<i class='icon-bolt'></i> Execute transformation");
             }
+
+            // stop sending requests to find new revision numbers
+            clearInterval(timeout_browser);
+            timeout_browser = 0;
           }
           if((i + 1) == results_tables.length) executions_loading = false;
         },
@@ -49,25 +61,8 @@ $(document).ready(function() {
     });
   };
 
+  // needed to load the initial inline browser links
   loadExecutions();
-  execution_interval = setInterval(function() { if(!executions_loading) loadExecutions(); }, 20000);
-
-  // Attaches a timeout to the elements data object
-  // Also attaches a count which will cause the time in between checks to increase over time
-  function throttledUpdates(elem) {
-    if(!elem.data("n")) {
-      elem.data("n", 1);
-      elem.data("interval", 4);
-    }
-    else {
-      elem.data("n", elem.data("n") + 1);
-      if(!(elem.data("n") % 10)) {
-        elem.data("interval", elem.data("interval") * 2);
-      }
-      loadExecutions(elem);
-    }
-    elem.data("timeout", setTimeout(function() { throttledUpdates(elem) }, elem.data("interval") * 1000));
-  }
 
   $("#bi-integration-url-dialog").dialog({autoOpen:false,width:500, modal:true, title:"Report GET URL"});
   $("#content .get-url-btn").click(function(){
@@ -88,12 +83,13 @@ $(document).ready(function() {
     $("#dialogschedule").dialog('open');
     return false;
   });
+
   // Execution event
   $(".execute-actions a[data-action]").click(function() {
-    var transform_name = $(this).closest(".execute-actions").attr("data-transform");
-    var transform_wrapper = $("#transform-" + transform_name);
-    var execute_btn_handler = $(".execute-actions", transform_wrapper);
-    var group_label = $(".group-label", execute_btn_handler);
+    transform_name = $(this).closest(".execute-actions").attr("data-transform");
+    transform_wrapper = $("#transform-" + transform_name);
+    execute_btn_handler = $(".execute-actions", transform_wrapper);
+    group_label = $(".group-label", execute_btn_handler);
 
     if($(".btn.disabled", execute_btn_handler).length == 0) {
       // Set our form values given the execution request
@@ -102,22 +98,32 @@ $(document).ready(function() {
       $("#exec-form input.bi-parameter").remove();
       transform_wrapper.find("input.bi-parameter").clone().appendTo($("#exec-form"));
       // Change the button state to loading
-      group_label.html("<i class='icon-spin icon-spinner'></i>");
+      group_label.html("<i class='icon-spin icon-spinner'></i> Executing transformation");
+      group_label.removeClass("btn-success").addClass("btn-warning");
+      group_label.next().removeClass("btn-success").addClass("btn-warning");
       $(".btn", execute_btn_handler).addClass("disabled");
 
       // If our request is not to async
       if($("#exec-action").val() != "execute_download") {
         $("#exec-form").ajaxSubmit({
           url: $("#exec-form").attr("action"),
-          success: function() {
-            throttledUpdates(transform_wrapper);
+          success: function(data) {
+            showProgress(data, group_label);
+          },
+          error: function() {
+            // TODO something better than a alert box
+            alert("Unable to execute transformation.")
           }
         });
       }
       else {
+        // we have this set at an arbitary 30 seconds - maybe we can 
+        // be cleverer than that? why don't we request via $.ajax() and send 
+        // a response so we know for sure when to change the icons back?
         setTimeout(function() {
           $(".btn", execute_btn_handler).removeClass("disabled");
-          group_label.html("<i class='icon-bolt'></i> Execute");
+          group_label.removeClass("disabled").addClass("btn-success").html("<i class='icon-bolt'></i> Execute transformation");
+          group_label.next().addClass("btn-success");
         }, 30000);
         $("#exec-form").submit();
       }
@@ -125,4 +131,71 @@ $(document).ready(function() {
     execute_btn_handler.removeClass("open");
     return false;
   });
+
+  function showProgress(data) {
+    /**
+    Set up for a series of XMLHttpRequests for data. We use setInterval() 
+    to repeat requests by calling the checkTransformProgress() function.
+    **/
+
+    transform_id = data['transform_id'];
+    var progressHandler = setInterval(function(){checkTransformProgress(transform_id)}, 1000)
+
+    function updateUserInterface(timeoutHandler, btn, alert, message) {
+      /**
+      Update the UI to reflect the completion or failure of a transformation, 
+      and expire the setInterval progressHandler to stop sending any more requests.
+      **/
+
+      // expire setInterval()
+      clearInterval(timeoutHandler);
+      progressHandler = 0;
+
+      // update the UI (change button styling, add a alert message)
+      group_label.removeClass("btn-warning disabled").addClass(btn).html("<i class='icon-bolt'></i> Execute transformation");
+      group_label.next().removeClass("btn-warning").addClass(btn);
+      $("#content").prepend('<div class="cf alert ' + alert + ' alert-dismissable individual">\
+                              <i class="alert-icon icon-info-sign"></i>\
+                              <div style="display:inline">' + message + '</div>\
+                              <button type="button" class="close btn btn-mini" data-dismiss="alert">\
+                                <i class="icon-remove"></i>\
+                              </button>\
+                            </div>')
+    }
+
+    function checkTransformProgress(uuid) {
+      /**
+      Sends a AJAX request to the server, with the uuid for the transformation 
+      as the data packet via JSON. This then invokes a DB query via the Python 
+      DB API, which checks on the progress of our transformation.
+
+      If we recieve a successful response, we check the status - which we 
+      expect to be null, running, success or error. Based on this value we
+      update the user interface appropriately.
+      **/
+      $.ajax({
+        type: 'GET',
+        data: {'uuid': uuid},
+        url: window.tracBaseUrl + 'ajax/businessintelligence',
+        success: function(data) {
+          $execute_button = $("a[data-action=execute_async]")
+          // use jQuery inArray as JS indexOf only supported in IE 8+
+          if ($.inArray(data['status'], ['running', null]) >=0) {
+            $execute_button.removeClass("btn-success").addClass("btn-warning");
+          }
+          else if (data['status'] == "success") {
+            updateUserInterface(progressHandler, 'btn-success', 'alert-success',
+              "Successfully executed '" + transform_name + "' transformation.")
+            // now we also update the inline file browser div
+            timeout_browser = setInterval(function() { if(!executions_loading) loadExecutions(); }, 2000);
+          }
+          else if (data['status'] == 'error') {
+            updateUserInterface(progressHandler, 'btn-danger', 'alert-danger',
+              "Failed to execute '" + transform_name + "' transformation.")
+          }
+        }
+      });
+    }
+  }
+
 });
