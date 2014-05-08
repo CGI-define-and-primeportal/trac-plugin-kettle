@@ -136,10 +136,14 @@ $(document).ready(function() {
     /**
     Set up for a series of XMLHttpRequests for data. We use setInterval() 
     to repeat requests by calling the checkTransformProgress() function.
+
+    This is set to an arbitary length of 2 seconds, which seems like a good 
+    compromise between being responsive to the user, and not tieing up too 
+    many apache threads. 
     **/
 
     transform_id = data['transform_id'];
-    var progressHandler = setInterval(function(){checkTransformProgress(transform_id)}, 1000)
+    var progressHandler = setInterval(function(){checkTransformProgress(transform_id)}, 2000)
 
     function updateUserInterface(timeoutHandler, btn, alert, message) {
       /**
