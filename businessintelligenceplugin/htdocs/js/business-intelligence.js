@@ -182,10 +182,9 @@ $(document).ready(function() {
         data: {'uuid': uuid},
         url: window.tracBaseUrl + 'ajax/businessintelligence',
         success: function(data) {
-          $execute_button = $("a[data-action=execute_async]")
           // use jQuery inArray as JS indexOf only supported in IE 8+
           if ($.inArray(data['status'], ['running', null]) >=0) {
-            $execute_button.removeClass("btn-success").addClass("btn-warning");
+            group_label.removeClass("btn-success").addClass("btn-warning");
           }
           else if (data['status'] == "success") {
             updateUserInterface(progressHandler, 'btn-success', 'alert-success',
