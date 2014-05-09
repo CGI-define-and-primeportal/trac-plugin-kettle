@@ -270,7 +270,7 @@ class TransformExecutor(Component):
 
         if script.returncode:
 
-            # transform has failed to complete - update bi_logging table
+            # transform has failed to complete - update running_transformations table
             if transformation_id:
                 @self.env.with_transaction()
                 def do_insert(db):
@@ -284,7 +284,7 @@ class TransformExecutor(Component):
             raise RuntimeError("Business Intelligence subprocess script failed")
 
         # We know assume that the transform has finished successfully
-        # so we update the bi_logging table to represent this
+        # so we update the running_transformations table to represent this
         if transformation_id:
             @self.env.with_transaction()
             def do_insert(db):
