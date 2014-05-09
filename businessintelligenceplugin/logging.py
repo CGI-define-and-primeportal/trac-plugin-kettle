@@ -77,7 +77,7 @@ class BusinessIntelligenceLogging(Component):
     def process_request(self, req):
 
         if not req.get_header('X-Requested-With') == 'XMLHttpRequest':
-            raise TracError("We only accept XMLHttpRequests to his URL.")
+            raise TracError("We only accept XMLHttpRequests to this URL.")
 
         transformation_id = req.args.get('uuid')
         if transformation_id:
