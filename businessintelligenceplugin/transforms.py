@@ -49,7 +49,7 @@ class TransformExecutor(Component):
 
     def process_request(self, req):
         if 'action' in req.args:
-            transform_id = str(uuid.uuid4())
+            transform_id = self._generate_running_transformation_id()
             parameters = {}
             for k in req.args:
                 if k.startswith("parameter:"):
@@ -151,7 +151,8 @@ class TransformExecutor(Component):
     def _do_execute(self, transformation, *args):
         # change to a safe CWD (as subversion commit hooks will want to "chdir(.)" before they execute
         parameters = dict(zip(args[::2], args[1::2]))
-        print "Generated revisions %s" % self._do_execute_transformation(transformation, transformation_id=str(uuid.uuid4()),
+        transformation_id = self._generate_running_transformation_id()
+        print "Generated revisions %s" % self._do_execute_transformation(transformation, transformation_id=transformation_id,
                                                                          listall=True, changecwd=True, parameters=parameters)
 
     # IXMLRPCHandler methods
@@ -173,15 +174,19 @@ class TransformExecutor(Component):
         Runs asynchronously as this can take a variable amount of time depending on transformation complexity.
 
         No useful return code provided."""
-        thread.start_new_thread(self._do_execute_transformation, (transformation,))
+        transformation_id = self._generate_running_transformation_id()
+        thread.start_new_thread(self._do_execute_transformation, (transformation,), {'transformation_id': transformation_id})
 
     def execute_transformation_sync(self, req, transformation):
         """Synchronous execution of transformation."""
-        return self._do_execute_transformation(transformation)
+        transformation_id = self._generate_running_transformation_id()
+        return self._do_execute_transformation(transformation, transformation_id=transformation_id)
 
     def execute_transformation_download(self, req, transformation):
         """Synchronous execution of transformation, without storing the result and returning the content over the API"""
-        filename, stat, filestream = self._do_execute_transformation(transformation, store=False, return_bytes_handle=True)
+        transformation_id = self._generate_running_transformation_id()
+        filename, stat, filestream = self._do_execute_transformation(transformation, store=False, 
+                                    return_bytes_handle=True, transformation_id=transformation_id)
         return Binary(filestream.read())
 
     # IPermissionRequestor methods
@@ -417,6 +422,16 @@ class TransformExecutor(Component):
                         d[kjb_name].setdefault("parameters",{})[i.find('name').text] = {'default_value': i.find('default_value').text,
                                                                                         'description': i.find('description').text}
         return d
+
+    def _generate_running_transformation_id(self):
+        """
+        Generate an id for each running transformation using a the uuid module.
+        Note this does not uniqely identify each transformation, it is used 
+        to identify each running transformation in the running_transformation 
+        table.
+        """
+
+        return str(uuid.uuid4())
 
 
 class TransformContextMenu(Component):
