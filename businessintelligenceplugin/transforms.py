@@ -273,8 +273,8 @@ class TransformExecutor(Component):
                     self.env.log.debug("Updating running_transformations - %s failed to complete",
                                         transformation_id)
                     cursor.execute("""UPDATE running_transformations
-                                      SET transformation_id=%s, status=%s
-                                      WHERE id_batch=%s""", (transformation_id, "error", transformation_id))
+                                      SET transformation_id=%s, status=%s, ended=%s
+                                      WHERE id_batch=%s""", (transformation_id, "error", transformation_id, to_utimestamp(datetime.now(pytz.utc))))
 
             raise RuntimeError("Business Intelligence subprocess script failed")
 
