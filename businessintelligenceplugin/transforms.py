@@ -83,6 +83,11 @@ class TransformExecutor(Component):
 
             elif req.args['action'] == "execute":
                 self._do_execute_transformation(req.args['transform'], transformation_id=transform_id, parameters=parameters)
+            elif req.args['action'] == 'check_status':
+                if 'uuid' not in req.args:
+                    raise KeyError
+                status = self._check_transform_status(req.args['uuid'])
+                req.send(to_json({'status':status}), 'text/json')
             else:
                 add_warning(req, "No valid action found")
                 req.redirect(req.href.businessintelligence())
@@ -433,6 +438,21 @@ class TransformExecutor(Component):
 
         return str(uuid.uuid4())
 
+    def _check_transform_status(self, transformation_id):
+        """
+        Queries the running_transformation table to return the status of a 
+        transform identified by its UUID.
+        """
+
+        db = self.env.get_read_db()
+        cursor = db.cursor()
+        cursor.execute("""SELECT status
+                          FROM running_transformations
+                          WHERE transformation_id=%s""",
+                          (transformation_id,))
+
+        row = cursor.fetchone()
+        return row[0] if row else None
 
 class TransformContextMenu(Component):
     implements(ISourceBrowserContextMenuProvider)

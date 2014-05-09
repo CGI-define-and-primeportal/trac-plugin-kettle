@@ -179,8 +179,8 @@ $(document).ready(function() {
       **/
       $.ajax({
         type: 'GET',
-        data: {'uuid': uuid},
-        url: window.tracBaseUrl + 'ajax/businessintelligence',
+        data: {'action': 'check_status', 'uuid': uuid},
+        url: window.tracBaseUrl + 'businessintelligence',
         success: function(data) {
           // use jQuery inArray as JS indexOf only supported in IE 8+
           if ($.inArray(data['status'], ['running', null]) >=0) {

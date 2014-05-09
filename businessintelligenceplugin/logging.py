@@ -1,13 +1,11 @@
 from trac.core import Component, TracError, implements
 from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
-from trac.util.presentation import to_json
-from trac.web import IRequestHandler
 
 
 class BusinessIntelligenceLogging(Component):
 
-    implements(IEnvironmentSetupParticipant, IRequestHandler)
+    implements(IEnvironmentSetupParticipant)
 
     # IEnvironmentSetupParticipant
     _schema_version = 1
@@ -67,34 +65,3 @@ class BusinessIntelligenceLogging(Component):
         if not found_version:
             # Create tables
             self.environment_created()
-
-    # IRequestHandler methods
-
-    def match_request(self, req):
-        # maybe use a different URL here
-        return req.path_info.startswith("/ajax/businessintelligence")
-
-    def process_request(self, req):
-
-        if not req.get_header('X-Requested-With') == 'XMLHttpRequest':
-            raise TracError("We only accept XMLHttpRequests to this URL.")
-
-        transformation_id = req.args.get('uuid')
-        if transformation_id:
-            db = self.env.get_read_db()
-            cursor = db.cursor()
-            cursor.execute("""SELECT status
-                              FROM running_transformations
-                              WHERE transformation_id=%s""",
-                              (transformation_id,))
-
-            row = cursor.fetchone()
-            if row:
-                data = {
-                    'status': row[0],
-                }
-            else:
-                data = {
-                    'status': None,
-                }
-            req.send(to_json(data), 'text/json')
