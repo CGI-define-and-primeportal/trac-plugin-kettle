@@ -17,6 +17,7 @@ from trac_browser_svn_ops.svn_fs import SubversionWriter
 from contextmenu.contextmenu import ISourceBrowserContextMenuProvider
 
 from datetime import datetime
+import json
 import uuid
 import types
 import glob
@@ -86,8 +87,8 @@ class TransformExecutor(Component):
             elif req.args['action'] == 'check_status':
                 if 'uuid' not in req.args:
                     raise KeyError
-                status = self._check_transform_status(req.args['uuid'])
-                req.send(to_json({'status':status}), 'text/json')
+                running_transformations = json.loads(req.args['uuid'])
+                req.send(to_json(self._generate_status_response(running_transformations)), 'text/json')
             else:
                 add_warning(req, "No valid action found")
                 req.redirect(req.href.businessintelligence())
@@ -109,6 +110,7 @@ class TransformExecutor(Component):
             add_stylesheet(req, 'common/css/browser.css')
             add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
             add_ctxtnav(req, tag.a(tag.i(class_="icon-calendar"), ' Schedule Transformations', id="schedulebutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="icon-cog"), ' Running Transformations', id="runningbutton"))
 
             return "listtransformations.html", data, None
 
@@ -284,7 +286,7 @@ class TransformExecutor(Component):
                                         transformation_id)
                     cursor.execute("""UPDATE running_transformations
                                       SET transformation_id=%s, status=%s, ended=%s
-                                      WHERE id_batch=%s""", (transformation_id, "error", transformation_id, to_utimestamp(datetime.now(pytz.utc))))
+                                      WHERE transformation_id=%s""", (transformation_id, "error", to_utimestamp(datetime.now(pytz.utc)), transformation_id))
 
             raise RuntimeError("Business Intelligence subprocess script failed")
 
@@ -438,21 +440,39 @@ class TransformExecutor(Component):
 
         return str(uuid.uuid4())
 
-    def _check_transform_status(self, transformation_id):
+    def _generate_status_response(self, transformation_ids):
         """
-        Queries the running_transformation table to return the status of a 
-        transform identified by its UUID.
+        Queries the running_transformation table to return the status of 
+        transformation currently being executed.
+
+        Note that we expect transformation_ids to be a iterable (even if it 
+        only contains one UUID). If this iterable contains 'all', we return 
+        every row which has a status 'running'.
+
+        Returns a list of dictionaries which we send back as to client as JSON.
         """
 
         db = self.env.get_read_db()
         cursor = db.cursor()
-        cursor.execute("""SELECT status
-                          FROM running_transformations
-                          WHERE transformation_id=%s""",
-                          (transformation_id,))
 
-        row = cursor.fetchone()
-        return row[0] if row else None
+        if 'all' in transformation_ids:
+            cursor.execute("""SELECT transformation_id, status, started 
+                              FROM running_transformations
+                              WHERE status='running'
+                           """)
+        else:
+            cursor.execute("""SELECT transformation_id, status, started 
+                              FROM running_transformations 
+                              WHERE transformation_id IN ({})
+                           """.format(db.parammarks(len(transformation_ids))),
+                              transformation_ids)
+
+        return [{
+                 'id': row[0],
+                 'status': row[1],
+                 'started': row[2]
+                } for row in cursor]
+
 
 class TransformContextMenu(Component):
     implements(ISourceBrowserContextMenuProvider)

@@ -77,6 +77,11 @@
           To ask for automated scheduling of existing jobs or transformations, please ${email_service_desk}.
         </py:if>
       </div>
+      <div id="dialogrunning" class="hidden">
+        <table id="runningtable" class="rounded full-width border-header">
+          <colgroup span="4" class="columns"></colgroup>
+        </table>
+      </div>
 
       <form py:if="'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm"
             id="exec-form" method="post" action="${req.href.businessintelligence()}" class="hidden">
