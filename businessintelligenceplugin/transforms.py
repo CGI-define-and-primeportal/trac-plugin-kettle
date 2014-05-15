@@ -5,7 +5,7 @@ from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler, RequestDone, HTTPNotFound 
 from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav
 from trac.util import content_disposition
-from trac.util.datefmt import to_utimestamp
+from trac.util.datefmt import to_utimestamp, utc
 from trac.util.presentation import to_json
 
 
@@ -23,7 +23,6 @@ import types
 import glob
 import os
 from lxml import etree
-import pytz
 import tempfile
 import shutil
 import subprocess
@@ -255,7 +254,7 @@ class TransformExecutor(Component):
                 self.env.log.debug("Updating running_transformations - inserting new row for %s",
                                     transformation_id)
                 cursor.execute("""INSERT INTO running_transformations (transformation_id, status, started)
-                                  VALUES (%s, %s, %s)""", (transformation_id, "running", to_utimestamp(datetime.now(pytz.utc))))
+                                  VALUES (%s, %s, %s)""", (transformation_id, "running", to_utimestamp(datetime.now(utc))))
 
         # this bit of Python isn't so good :-( I'll just merge the stdout and stderr streams...
 
@@ -286,7 +285,7 @@ class TransformExecutor(Component):
                                         transformation_id)
                     cursor.execute("""UPDATE running_transformations
                                       SET transformation_id=%s, status=%s, ended=%s
-                                      WHERE transformation_id=%s""", (transformation_id, "error", to_utimestamp(datetime.now(pytz.utc)), transformation_id))
+                                      WHERE transformation_id=%s""", (transformation_id, "error", to_utimestamp(datetime.now(utc)), transformation_id))
 
             raise RuntimeError("Business Intelligence subprocess script failed")
 
@@ -300,7 +299,7 @@ class TransformExecutor(Component):
                                     transformation_id)
                 cursor.execute("""UPDATE running_transformations
                                   SET transformation_id=%s, status=%s, ended=%s
-                                  WHERE transformation_id=%s""", (transformation_id, "success", to_utimestamp(datetime.now(pytz.utc)), transformation_id))
+                                  WHERE transformation_id=%s""", (transformation_id, "success", to_utimestamp(datetime.now(utc)), transformation_id))
 
         if store:
             reponame, repos, path = RepositoryManager(self.env).get_repository_by_path('')
