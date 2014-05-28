@@ -462,7 +462,7 @@ class TransformExecutor(Component):
         else:
             cursor.execute("""SELECT transformation_id, status, started 
                               FROM running_transformations 
-                              WHERE transformation_id IN ({})
+                              WHERE transformation_id IN ({0})
                            """.format(db.parammarks(len(transformation_ids))),
                               transformation_ids)
 
