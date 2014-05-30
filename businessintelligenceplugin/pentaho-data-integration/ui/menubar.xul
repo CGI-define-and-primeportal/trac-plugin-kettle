@@ -82,7 +82,7 @@
         <menuitem id="edit-show-arguments" acceltext="CTRL-ALT-U" accesskey="ctrl-alt-u" label="${Spoon.Menu.Edit.ShowArguments}"
           command="spoon.showArguments()" />
         <menuseparator />
-        <menuitem id="edit-settings" acceltext="CTRL-T" accesskey="ctrl-t" label="${Spoon.Menu.Transformation.Settings}"
+        <menuitem id="edit-settings" label="${Spoon.Menu.Transformation.Settings}"
           command="spoon.editProperties()" />
       </menupopup>
     </menu>
@@ -178,9 +178,9 @@
       <menupopup id="help-popup">
         <menuitem id="help-tip" label="${Spoon.Menu.Help.Tip}" command="spoon.showTips()" />
         <menuitem id="help-welcome" label="${Spoon.Menu.Help.Welcome}" command="spoon.showWelcomePage()" />
+        <menuitem id="help-welcome" label="${Spoon.Menu.Help.Documentation}" command="spoon.showDocumentMap()" />
         <menuseparator id="help-separator-1"/>
-        <menuitem id="help-step-plugins" label="${Spoon.Menu.StepPlugins}" command="spoon.helpShowStepPlugins()" />
-        <menuitem id="help-jobentry-plugins" label="${Spoon.Menu.JobEntryPlugins}" command="spoon.helpShowJobEntryPlugins()" />
+        <menuitem id="help-plugins" label="${Spoon.Menu.ShowPluginInfo}" command="spoon.showPluginInfo()" />
         <menuitem id="help-about" label="${Spoon.Menu.About}" command="spoon.helpAbout()" />
       </menupopup>
     </menu>
