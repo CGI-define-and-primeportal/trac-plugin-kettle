@@ -18,7 +18,7 @@ setup(
             'htdocs/js/*.js',
             'templates/*',
             'default-transformation-templates/*/*',
-            'job-templates/*',
+            'job-templates/*/*',
             'pentaho-data-integration/*.sh',
             'pentaho-data-integration/launcher/*.jar',
             'pentaho-data-integration/launcher/*.properties',
