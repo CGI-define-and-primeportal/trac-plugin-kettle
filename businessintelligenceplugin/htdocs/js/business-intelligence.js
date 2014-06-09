@@ -77,6 +77,7 @@ $(document).ready(function() {
 
       $.ajax({
         type: 'GET',
+        cache: false,
         data: {
           'action': 'check_status',
           'uuid': JSON.stringify(running_uuids)
