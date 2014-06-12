@@ -137,7 +137,7 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>smtp.uk.logica.com</nullif>
+        <nullif>localhost</nullif>
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
