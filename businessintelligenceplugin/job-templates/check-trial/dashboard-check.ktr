@@ -7,7 +7,7 @@
     <trans_version/>
     <trans_type>Normal</trans_type>
     <trans_status>2</trans_status>
-    <directory>&#47;</directory>
+    <directory>&#x2f;</directory>
     <parameters>
         <parameter>
             <name>max</name>
@@ -32,7 +32,7 @@
 <size_limit_lines/>
 <interval/>
 <timeout_days/>
-<field><id>ID_BATCH</id><enabled>Y</enabled><name>ID_BATCH</name></field><field><id>CHANNEL_ID</id><enabled>Y</enabled><name>CHANNEL_ID</name></field><field><id>TRANSNAME</id><enabled>Y</enabled><name>TRANSNAME</name></field><field><id>STATUS</id><enabled>Y</enabled><name>STATUS</name></field><field><id>LINES_READ</id><enabled>Y</enabled><name>LINES_READ</name><subject/></field><field><id>LINES_WRITTEN</id><enabled>Y</enabled><name>LINES_WRITTEN</name><subject/></field><field><id>LINES_UPDATED</id><enabled>Y</enabled><name>LINES_UPDATED</name><subject/></field><field><id>LINES_INPUT</id><enabled>Y</enabled><name>LINES_INPUT</name><subject/></field><field><id>LINES_OUTPUT</id><enabled>Y</enabled><name>LINES_OUTPUT</name><subject/></field><field><id>LINES_REJECTED</id><enabled>Y</enabled><name>LINES_REJECTED</name><subject/></field><field><id>ERRORS</id><enabled>Y</enabled><name>ERRORS</name></field><field><id>STARTDATE</id><enabled>Y</enabled><name>STARTDATE</name></field><field><id>ENDDATE</id><enabled>Y</enabled><name>ENDDATE</name></field><field><id>LOGDATE</id><enabled>Y</enabled><name>LOGDATE</name></field><field><id>DEPDATE</id><enabled>Y</enabled><name>DEPDATE</name></field><field><id>REPLAYDATE</id><enabled>Y</enabled><name>REPLAYDATE</name></field><field><id>LOG_FIELD</id><enabled>Y</enabled><name>LOG_FIELD</name></field></trans-log-table>
+<field><id>ID_BATCH</id><enabled>Y</enabled><name>ID_BATCH</name></field><field><id>CHANNEL_ID</id><enabled>Y</enabled><name>CHANNEL_ID</name></field><field><id>TRANSNAME</id><enabled>Y</enabled><name>TRANSNAME</name></field><field><id>STATUS</id><enabled>Y</enabled><name>STATUS</name></field><field><id>LINES_READ</id><enabled>Y</enabled><name>LINES_READ</name><subject/></field><field><id>LINES_WRITTEN</id><enabled>Y</enabled><name>LINES_WRITTEN</name><subject/></field><field><id>LINES_UPDATED</id><enabled>Y</enabled><name>LINES_UPDATED</name><subject/></field><field><id>LINES_INPUT</id><enabled>Y</enabled><name>LINES_INPUT</name><subject/></field><field><id>LINES_OUTPUT</id><enabled>Y</enabled><name>LINES_OUTPUT</name><subject/></field><field><id>LINES_REJECTED</id><enabled>Y</enabled><name>LINES_REJECTED</name><subject/></field><field><id>ERRORS</id><enabled>Y</enabled><name>ERRORS</name></field><field><id>STARTDATE</id><enabled>Y</enabled><name>STARTDATE</name></field><field><id>ENDDATE</id><enabled>Y</enabled><name>ENDDATE</name></field><field><id>LOGDATE</id><enabled>Y</enabled><name>LOGDATE</name></field><field><id>DEPDATE</id><enabled>Y</enabled><name>DEPDATE</name></field><field><id>REPLAYDATE</id><enabled>Y</enabled><name>REPLAYDATE</name></field><field><id>LOG_FIELD</id><enabled>Y</enabled><name>LOG_FIELD</name></field><field><id>EXECUTING_SERVER</id><enabled>N</enabled><name>EXECUTING_SERVER</name></field><field><id>EXECUTING_USER</id><enabled>N</enabled><name>EXECUTING_USER</name></field><field><id>CLIENT</id><enabled>N</enabled><name>CLIENT</name></field></trans-log-table>
 <perf-log-table><connection/>
 <schema/>
 <table/>
@@ -49,6 +49,11 @@
 <table/>
 <timeout_days/>
 <field><id>ID_BATCH</id><enabled>Y</enabled><name>ID_BATCH</name></field><field><id>CHANNEL_ID</id><enabled>Y</enabled><name>CHANNEL_ID</name></field><field><id>LOG_DATE</id><enabled>Y</enabled><name>LOG_DATE</name></field><field><id>TRANSNAME</id><enabled>Y</enabled><name>TRANSNAME</name></field><field><id>STEPNAME</id><enabled>Y</enabled><name>STEPNAME</name></field><field><id>STEP_COPY</id><enabled>Y</enabled><name>STEP_COPY</name></field><field><id>LINES_READ</id><enabled>Y</enabled><name>LINES_READ</name></field><field><id>LINES_WRITTEN</id><enabled>Y</enabled><name>LINES_WRITTEN</name></field><field><id>LINES_UPDATED</id><enabled>Y</enabled><name>LINES_UPDATED</name></field><field><id>LINES_INPUT</id><enabled>Y</enabled><name>LINES_INPUT</name></field><field><id>LINES_OUTPUT</id><enabled>Y</enabled><name>LINES_OUTPUT</name></field><field><id>LINES_REJECTED</id><enabled>Y</enabled><name>LINES_REJECTED</name></field><field><id>ERRORS</id><enabled>Y</enabled><name>ERRORS</name></field><field><id>LOG_FIELD</id><enabled>N</enabled><name>LOG_FIELD</name></field></step-log-table>
+<metrics-log-table><connection/>
+<schema/>
+<table/>
+<timeout_days/>
+<field><id>ID_BATCH</id><enabled>Y</enabled><name>ID_BATCH</name></field><field><id>CHANNEL_ID</id><enabled>Y</enabled><name>CHANNEL_ID</name></field><field><id>LOG_DATE</id><enabled>Y</enabled><name>LOG_DATE</name></field><field><id>METRICS_DATE</id><enabled>Y</enabled><name>METRICS_DATE</name></field><field><id>METRICS_CODE</id><enabled>Y</enabled><name>METRICS_CODE</name></field><field><id>METRICS_DESCRIPTION</id><enabled>Y</enabled><name>METRICS_DESCRIPTION</name></field><field><id>METRICS_SUBJECT</id><enabled>Y</enabled><name>METRICS_SUBJECT</name></field><field><id>METRICS_TYPE</id><enabled>Y</enabled><name>METRICS_TYPE</name></field><field><id>METRICS_VALUE</id><enabled>Y</enabled><name>METRICS_VALUE</name></field></metrics-log-table>
     </log>
     <maxdate>
       <connection/>
@@ -77,9 +82,9 @@
     <clusterschemas>
     </clusterschemas>
   <created_user>-</created_user>
-  <created_date>2014&#47;05&#47;15 09:44:37.256</created_date>
+  <created_date>2014&#x2f;05&#x2f;15 09&#x3a;44&#x3a;37.256</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2014&#47;05&#47;15 09:44:37.256</modified_date>
+  <modified_date>2014&#x2f;05&#x2f;15 09&#x3a;44&#x3a;37.256</modified_date>
   </info>
   <notepads>
   </notepads>
@@ -87,7 +92,7 @@
     <name>projectdata</name>
     <server/>
     <type>GENERIC</type>
-    <access>JNDI</access>
+    <access>, </access>
     <database>projectdata</database>
     <port>1521</port>
     <username/>
@@ -106,12 +111,19 @@
     </attributes>
   </connection>
   <order>
-  <hop> <from>Modified Java Script Value</from><to>Email reporter (30 days)</to><enabled>Y</enabled> </hop>  <hop> <from>Add extra fields</from><to>Modified Java Script Value</to><enabled>Y</enabled> </hop>  <hop> <from>Text file input</from><to>Join Rows (cartesian product)</to><enabled>Y</enabled> </hop>  <hop> <from>Join Rows (cartesian product)</from><to>Add extra fields</to><enabled>Y</enabled> </hop>  <hop> <from>Get dashboard tickets</from><to>Copy rows to result</to><enabled>Y</enabled> </hop>  <hop> <from>Get dashboard tickets</from><to>Join Rows (cartesian product)</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>Modified Java Script Value</from><to>Email reporter &#x28;30 days&#x29;</to><enabled>Y</enabled> </hop>
+  <hop> <from>Add extra fields</from><to>Modified Java Script Value</to><enabled>Y</enabled> </hop>
+  <hop> <from>Text file input</from><to>Join Rows &#x28;cartesian product&#x29;</to><enabled>Y</enabled> </hop>
+  <hop> <from>Join Rows &#x28;cartesian product&#x29;</from><to>Add extra fields</to><enabled>Y</enabled> </hop>
+  <hop> <from>Get dashboard tickets</from><to>Copy rows to result</to><enabled>Y</enabled> </hop>
+  <hop> <from>Get dashboard tickets</from><to>Join Rows &#x28;cartesian product&#x29;</to><enabled>Y</enabled> </hop>
+  </order>
   <step>
     <name>Add extra fields</name>
     <type>Constant</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
@@ -125,9 +137,10 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>smtp.uk.logica.com</nullif>
+        <nullif>localhost</nullif>
         <length>-1</length>
         <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
       <field>
         <name>port</name>
@@ -139,6 +152,7 @@
         <nullif>25</nullif>
         <length>-1</length>
         <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
       <field>
         <name>servicedesk</name>
@@ -147,9 +161,10 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>coreteam.service.desk.se@logica.com</nullif>
+        <nullif>coreteam.service.desk.se&#x40;logica.com</nullif>
         <length>-1</length>
         <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
       <field>
         <name>emailsubject</name>
@@ -158,9 +173,10 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>#define Trial Project</nullif>
+        <nullif>&#x23;define Trial Project</nullif>
         <length>-1</length>
         <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
       <field>
         <name>supportteam</name>
@@ -169,9 +185,10 @@
         <currency/>
         <decimal/>
         <group/>
-        <nullif>#define Support Team</nullif>
+        <nullif>&#x23;define Support Team</nullif>
         <length>-1</length>
         <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
       </field>
     </fields>
      <cluster_schema/>
@@ -187,6 +204,7 @@
     <type>RowsToResult</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
@@ -201,10 +219,11 @@
     </step>
 
   <step>
-    <name>Email reporter (30 days)</name>
+    <name>Email reporter &#x28;30 days&#x29;</name>
     <type>Mail</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
@@ -223,6 +242,9 @@
       <include_subfolders>N</include_subfolders>
       <zipFilenameDynamic>N</zipFilenameDynamic>
       <isFilenameDynamic>N</isFilenameDynamic>
+      <attachContentFromField>N</attachContentFromField>
+      <attachContentField/>
+      <attachContentFileNameField/>
       <dynamicFieldname/>
       <dynamicWildcard/>
       <dynamicZipFilename/>
@@ -245,13 +267,14 @@
     <encoding>UTF-8</encoding>
     <priority>normal</priority>
     <importance>normal</importance>
+    <sensitivity>normal</sensitivity>
     <secureconnectiontype>SSL</secureconnectiontype>
       <embeddedimages>
       </embeddedimages>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>780</xloc>
-      <yloc>308</yloc>
+      <yloc>309</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -261,23 +284,14 @@
     <type>TableInput</type>
     <description/>
     <distribute>N</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
            <schema_name/>
            </partitioning>
     <connection>projectdata</connection>
-    <sql>SELECT t.id, t.&quot;time&quot;, t.reporter, t.status, s.&quot;value&quot;, c.&quot;value&quot;
-FROM ticket as t
-JOIN session_attribute as s
-  ON  s.sid = t.reporter
-JOIN ticket_custom as c
-  ON c.ticket = t.id
-WHERE t.status = &apos;trial&apos;
-  AND to_timestamp(t.time) &gt; NOW() - INTERVAL ${min}
-  AND to_timestamp(t.time) &lt; NOW() - INTERVAL ${max}
-  AND s.name = &apos;email&apos;
-  AND c.name = &apos;requested_id&apos;</sql>
+    <sql>SELECT t.id, t.&#x22;time&#x22;, t.reporter, t.status, s.&#x22;value&#x22;, c.&#x22;value&#x22;&#xa;FROM ticket as t&#xa;JOIN session_attribute as s&#xa;  ON  s.sid &#x3d; t.reporter&#xa;JOIN ticket_custom as c&#xa;  ON c.ticket &#x3d; t.id&#xa;WHERE t.status &#x3d; &#x27;trial&#x27;&#xa;  AND t.time&#x2f;1000000 &#x3c; date_part&#x28;&#x27;epoch&#x27;, NOW&#x28;&#x29; - INTERVAL &#x24;&#x7b;min&#x7d;&#x29;&#x3a;&#x3a;int&#xa;  AND t.time&#x2f;1000000 &#x3e; date_part&#x28;&#x27;epoch&#x27;, NOW&#x28;&#x29; - INTERVAL &#x24;&#x7b;max&#x7d;&#x29;&#x3a;&#x3a;int&#xa;  AND s.name &#x3d; &#x27;email&#x27;&#xa;  AND c.name &#x3d; &#x27;requested_id&#x27;&#x3b;</sql>
     <limit>0</limit>
     <lookup/>
     <execute_each_row>N</execute_each_row>
@@ -292,16 +306,17 @@ WHERE t.status = &apos;trial&apos;
     </step>
 
   <step>
-    <name>Join Rows (cartesian product)</name>
+    <name>Join Rows &#x28;cartesian product&#x29;</name>
     <type>JoinRows</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
            <schema_name/>
            </partitioning>
-      <directory>%%java.io.tmpdir%%</directory>
+      <directory>&#x25;&#x25;java.io.tmpdir&#x25;&#x25;</directory>
       <prefix>out</prefix>
       <cache_size>500</cache_size>
       <main>Text file input</main>
@@ -309,7 +324,7 @@ WHERE t.status = &apos;trial&apos;
 <condition>
  <negated>N</negated>
  <leftvalue/>
- <function>=</function>
+ <function>&#x3d;</function>
  <rightvalue/>
  </condition>
     </compare>
@@ -326,6 +341,7 @@ WHERE t.status = &apos;trial&apos;
     <type>ScriptValueMod</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
@@ -335,10 +351,7 @@ WHERE t.status = &apos;trial&apos;
     <optimizationLevel>9</optimizationLevel>
     <jsScripts>      <jsScript>        <jsScript_type>0</jsScript_type>
         <jsScript_name>Script 1</jsScript_name>
-        <jsScript_script>&#47;&#47;Script here
-
-emailmessage = emailmessage.replace(&#47;\$ticketid\$&#47;g, id);
-emailmessage = emailmessage.replace(&#47;\$projectname\$&#47;g, value_1); &#47;&#47;value1 is projectid</jsScript_script>
+        <jsScript_script>&#x2f;&#x2f;Script here&#xa;&#xa;emailmessage &#x3d; emailmessage.replace&#x28;&#x2f;&#x5c;&#x24;ticketid&#x5c;&#x24;&#x2f;g, id&#x29;&#x3b;&#xa;emailmessage &#x3d; emailmessage.replace&#x28;&#x2f;&#x5c;&#x24;projectname&#x5c;&#x24;&#x2f;g, value_1&#x29;&#x3b; &#x2f;&#x2f;value1 is projectid</jsScript_script>
       </jsScript>    </jsScripts>    <fields>      <field>        <name>emailmessage</name>
         <rename>emailmessage</rename>
         <type>String</type>
@@ -358,6 +371,7 @@ emailmessage = emailmessage.replace(&#47;\$projectname\$&#47;g, value_1); &#47;&
     <type>TextFileInput</type>
     <description/>
     <distribute>Y</distribute>
+    <custom_distribution/>
     <copies>1</copies>
          <partitioning>
            <method>none</method>
@@ -367,8 +381,8 @@ emailmessage = emailmessage.replace(&#47;\$projectname\$&#47;g, value_1); &#47;&
     <passing_through_fields>N</passing_through_fields>
     <accept_field/>
     <accept_stepname/>
-    <separator>${line.separator}</separator>
-    <enclosure>&quot;</enclosure>
+    <separator>&#x24;&#x7b;line.separator&#x7d;</separator>
+    <enclosure>&#x22;</enclosure>
     <enclosure_breaks>N</enclosure_breaks>
     <escapechar/>
     <header>N</header>
@@ -390,7 +404,7 @@ emailmessage = emailmessage.replace(&#47;\$projectname\$&#47;g, value_1); &#47;&
     <encoding/>
     <add_to_result_filenames>Y</add_to_result_filenames>
     <file>
-      <name>${Internal.Job.Filename.Directory}&#47;${templatename}</name>
+      <name>&#x24;&#x7b;Internal.Job.Filename.Directory&#x7d;&#x2f;&#x24;&#x7b;templatename&#x7d;</name>
       <filemask/>
       <exclude_filemask/>
       <file_required>N</file_required>
@@ -455,4 +469,5 @@ emailmessage = emailmessage.replace(&#47;\$projectname\$&#47;g, value_1); &#47;&
    <slave-step-copy-partition-distribution>
 </slave-step-copy-partition-distribution>
    <slave_transformation>N</slave_transformation>
+
 </transformation>
