@@ -314,6 +314,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                     ticket_values[k] = str(v)
                                 else:
                                     ticket_values[k] = ''
+                            else:
+                                # everything else wants to be a string too - as this we use COPY to insert to the database
+                                ticket_values[k] = str(v)
 
                         ticket_values['id'] = str(ticket_id)
 
