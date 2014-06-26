@@ -309,11 +309,11 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                         # original storage for custom_fields can only store strings, so pretend we had a string
                         for k, v in ticket_values.items():
-                            if k in custom_fields:
-                                if v:
-                                    ticket_values[k] = str(v)
-                                else:
-                                    ticket_values[k] = ''
+                            # everything wants to be a string as we use COPY to insert to the database
+                            if k in custom_fields and not v:
+                                ticket_values[k] = ''
+                            else:
+                                ticket_values[k] = str(v)
 
                         ticket_values['id'] = str(ticket_id)
 
