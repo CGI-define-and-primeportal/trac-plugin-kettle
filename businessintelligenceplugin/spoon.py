@@ -27,6 +27,9 @@ class SpoonExecutor(Component):
     def _do_spoon(self, connection_uri=None, ip=None):
         tempdir = tempfile.mkdtemp()
 
+        os.chdir(tempdir)
+        self.log.info("Changed working directory to %s", tempdir)
+
         write_simple_jndi_properties(self.env, tempdir, connection_uri, ip)
 
         # execute transform 
