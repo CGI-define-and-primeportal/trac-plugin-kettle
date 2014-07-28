@@ -313,7 +313,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                             if k in custom_fields and not v:
                                 ticket_values[k] = ''
                             else:
-                                ticket_values[k] = str(v)
+                                ticket_values[k] = encode_and_escape(v)
 
                         ticket_values['id'] = str(ticket_id)
 
