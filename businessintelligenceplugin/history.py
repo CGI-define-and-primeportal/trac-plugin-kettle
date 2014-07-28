@@ -199,24 +199,24 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         def _capture(db):
             def calculate_initial_values_for_ticket(ticket_id):
                 # first seen changes will be from the very first information we have about this ticket
-                cursor = db.cursor()
-                cursor.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
-                ticket_created = from_utimestamp(cursor.fetchone()[0])
+                initial_values_cursor = db.cursor()
+                initial_values_cursor.execute("SELECT time FROM ticket WHERE id = %s", (ticket_id,))
+                ticket_created = from_utimestamp(initial_values_cursor.fetchone()[0])
                 history_date = ticket_created.date()
 
                 # find original values for the ticket
                 for column in ticket_values.keys():
-                    cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
+                    initial_values_cursor.execute("SELECT oldvalue FROM ticket_change WHERE ticket = %s AND field = %s ORDER BY time LIMIT 1",  
                                    (ticket_id, column))
-                    result = cursor.fetchone()
+                    result = initial_values_cursor.fetchone()
                     if result is None:
                         if column in built_in_fields:
-                            cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
-                            result = cursor.fetchone()
+                            initial_values_cursor.execute("SELECT %s FROM ticket WHERE id = %%s" % column, (ticket_id,))
+                            result = initial_values_cursor.fetchone()
                             ticket_values[column] = encode_and_escape(result[0])
                         else:
-                            cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
-                            result = cursor.fetchone()
+                            initial_values_cursor.execute("SELECT value FROM ticket_custom WHERE ticket = %s AND name = %s", (ticket_id, column))
+                            result = initial_values_cursor.fetchone()
                             if result:
                                 ticket_values[column] = encode_and_escape(result[0])
                             else:
@@ -266,6 +266,7 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 ticket_ids_c.execute("SELECT id FROM ticket ORDER BY id")
                 ticket_ids = ticket_ids_c.fetchall()
 
+            insert_cursor = db.cursor()
             copy_data_buffer = StringIO()
 
             eta_prediction__start_time = datetime.datetime.now()
@@ -290,17 +291,17 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 # populate the "initial" values
                 if last_snapshot:
                     history_date = last_snapshot + datetime.timedelta(days=1)
-                    cursor = db.cursor()
+                    last_snapshot_cursor = db.cursor()
                     # we add ticket fields and history columns otherwise 
                     # we don't get previous values such as isclosed
                     columns = ticket_values.keys() + history_columns
-                    cursor.execute("SELECT %s FROM ticket_bi_historical "
-                                   "WHERE id = %%s AND _snapshottime = %%s "
-                                   "LIMIT 1 "
-                                   %  ",".join(columns), 
-                              (ticket_id, last_snapshot))
+                    last_snapshot_cursor.execute("SELECT %s FROM ticket_bi_historical "
+                                                 "WHERE id = %%s AND _snapshottime = %%s "
+                                                 "LIMIT 1 "
+                                                 %  ",".join(columns), 
+                                                 (ticket_id, last_snapshot))
 
-                    values = cursor.fetchone()
+                    values = last_snapshot_cursor.fetchone()
                     if not values:
                         self.log.warn("No historical data for ticket %s on %s?", ticket_id, last_snapshot)
                         ticket_values, ticket_created, history_date = calculate_initial_values_for_ticket(ticket_id)
@@ -323,8 +324,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
 
                 # now we're going to get a list of all the changes that this ticket goes through
 
-                cursor = db.cursor()
-                cursor.execute("SELECT time, field, newvalue "
+                ticket_changes_cursor = db.cursor()
+                ticket_changes_cursor.execute("SELECT time, field, newvalue "
                                "FROM ticket_change "
                                "WHERE ticket = %%s AND field in (%s) "
                                "AND time >= %%s AND time < %%s "
@@ -337,18 +338,18 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                   ]
                                )
                 ticket_changes =[(from_utimestamp(time), field, newvalue)
-                                 for time, field, newvalue in cursor]
+                                 for time, field, newvalue in ticket_changes_cursor]
 
                 # and then we'll update 'ticket_values' to make a representation of the ticket for the end of each day, and store that into the history database
 
-                def _calculate_totalhours_on_date(date):
+                def _calculate_totalhours_on_date(date, cursor):
                     cursor.execute("SELECT SUM(seconds_worked)/3600.0 FROM ticket_time WHERE ticket = %s AND time_started < %s",
                               (ticket_values['id'],
                                memoized_to_timestamp(startofnextday(date))))
                     result = cursor.fetchone()
                     return result[0] if result else 0
 
-                def _calculate_remaininghours_on_date(date):
+                def _calculate_remaininghours_on_date(date, cursor):
                     # find the closest absolute value
                     nextdate = startofnextday(date)
                     cursor.execute("SELECT to_timestamp(time / 1000000), oldvalue FROM ticket_change WHERE "
@@ -490,8 +491,8 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                     # example) the value when the ticket was new.
 
                     if work_around_untracked_hours:
-                        ticket_values['totalhours']     = encode_and_escape(_calculate_totalhours_on_date(history_date))
-                        ticket_values['remaininghours'] = encode_and_escape(_calculate_remaininghours_on_date(history_date))
+                        ticket_values['totalhours']     = encode_and_escape(_calculate_totalhours_on_date(history_date, ticket_changes_cursor))
+                        ticket_values['remaininghours'] = encode_and_escape(_calculate_remaininghours_on_date(history_date, ticket_changes_cursor))
 
                     for k in ticket_values:
                         if not ticket_values[k] and k in empty_means_zero:
@@ -517,19 +518,19 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                 if copy_data_buffer.tell() > 51916800: # 50 MB, randomly chosen
                     self.log.info("Flushing to table with COPY...")
                     copy_data_buffer.seek(0)
-                    cursor.copy_from(copy_data_buffer,
-                                     table='ticket_bi_historical',
-                                     sep='\t',
-                                     null=r'\N',
-                                     columns=history_table_cols)
+                    insert_cursor.copy_from(copy_data_buffer,
+                                            table='ticket_bi_historical',
+                                            sep='\t',
+                                            null=r'\N',
+                                            columns=history_table_cols)
                     copy_data_buffer = StringIO()
             self.log.info("Final flushing to table with COPY...")
             copy_data_buffer.seek(0)
-            cursor.copy_from(copy_data_buffer,
-                             table='ticket_bi_historical',
-                             sep='\t',
-                             null=r'\N',
-                             columns=history_table_cols)
+            insert_cursor.copy_from(copy_data_buffer,
+                                    table='ticket_bi_historical',
+                                    sep='\t',
+                                    null=r'\N',
+                                    columns=history_table_cols)
 
     def clear(self, force=False):
         if force != "force":
