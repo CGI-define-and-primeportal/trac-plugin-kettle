@@ -23,11 +23,11 @@ class HistoryStorageSystem(Component):
                                              doc="Work around the hours plugin changing totalhours and remaininghours without recording in ticket_change table")
 
     # IEnvironmentSetupParticipant
-    _schema_version = 4
+    _schema_version = 5
     schema = [
         # Ticket changesets
         Table('ticket_bi_historical')[
-            Column('_snapshottime', type='date'), # UTC, END of the day
+            Column('_snapshottime', type='date'), # UTC, END of the day, NOT NULL added later
             Column('_resolutiontime', type='timestamp with time zone'),
             Column('isclosed', type='int'),
             Column('id', type='int64'),
@@ -64,6 +64,7 @@ class HistoryStorageSystem(Component):
             for table in self.schema:
                 for statement in db_connector.to_sql(table):
                     cursor.execute(statement)
+                    cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")
 
             # system values are strings
             cursor.execute("INSERT INTO system (name, value) "
@@ -118,6 +119,11 @@ class HistoryStorageSystem(Component):
                            "ON ticket_bi_historical (id)")
             cursor.execute("CREATE INDEX ticket_bi_historical_milestone "
                            "ON ticket_bi_historical (milestone)")
+            cursor.execute("UPDATE system SET value = %s "
+                           "WHERE name = 'bi_history_schema'", 
+                           (str(self._schema_version),))
+        elif found_version == 4:
+            cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")            
             cursor.execute("UPDATE system SET value = %s "
                            "WHERE name = 'bi_history_schema'", 
                            (str(self._schema_version),))
