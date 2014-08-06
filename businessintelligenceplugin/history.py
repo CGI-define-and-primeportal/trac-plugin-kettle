@@ -140,6 +140,9 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         yield ('businessintelligence history clear', '[force]',
                """Clear up history capture tables - deletes data""",
                None, self.clear)
+        yield ('businessintelligence history clean', '[force]',
+               """Check for known data faults, and clear data if necessary - potentially deletes data""",
+               None, self.clean)
 
     # Internal methods
 
@@ -547,6 +550,18 @@ Can then also be limited to just one ticket for debugging purposes, but will not
         def _clear(db):
             cursor = db.cursor()
             cursor.execute("TRUNCATE ticket_bi_historical")
+
+    def clean(self, force=False):
+        @with_transaction(self.env)
+        def _clean(db):
+            cursor = db.cursor()
+            cursor.execute("SELECT COUNT(*) FROM ticket_bi_historical WHERE _snapshottime IS NULL");
+            null_snapshottimes = cursor.fetchone()[0]
+            if null_snapshottimes > 0:
+                self.log.warning("There are %d rows which have NULL _snapshottime", null_snapshottimes)
+                print "There are %d rows which have NULL _snapshottime, clearing data." % null_snapshottimes
+
+                return self.clear(force)
 
 
 # http://code.activestate.com/recipes/578231-probably-the-fastest-memoization-decorator-in-the-/
