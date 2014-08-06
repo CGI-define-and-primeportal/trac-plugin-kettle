@@ -19,9 +19,6 @@ class HistoryStorageSystem(Component):
     implements(IEnvironmentSetupParticipant,
                IAdminCommandProvider)
 
-    work_around_untracked_hours = BoolOption("businessintelligence", "work_around_untracked_hours", False,
-                                             doc="Work around the hours plugin changing totalhours and remaininghours without recording in ticket_change table")
-
     # IEnvironmentSetupParticipant
     _schema_version = 5
     schema = [
@@ -181,9 +178,6 @@ Can then also be limited to just one ticket for debugging purposes, but will not
             until = datetime.datetime.strptime(until_str, "%Y-%m-%d").date()
             if until > yesterday:
                 raise ValueError("Can't process any newer than %s" % yesterday)
-
-        # avoid looking this up in the config so much - profiling say's it's a hot point
-        work_around_untracked_hours = bool(self.work_around_untracked_hours)
 
         if self.env.config.get('trac', 'debug_sql'):
             self.log.warning("Temporarily disabling [trac]debug_sql")
@@ -492,14 +486,16 @@ Can then also be limited to just one ticket for debugging purposes, but will not
                                     active_changes['isclosed'] = "0"
 
                     ticket_values.update(active_changes)
+
                     # these are pretty hard to calculate,
                     # remaininghours especially as we don't have all
                     # the values it could have taken recorded. We have
                     # some known data-points, and some known
                     # delta-points, but we don't know for sure (for
                     # example) the value when the ticket was new.
-
-                    if work_around_untracked_hours:
+                    # this was improved by https://d4.define.logica.com/ticket/3676
+                    # so we only need to do the heuristics for old dates
+                    if history_date.year < 2014:
                         ticket_values['totalhours']     = encode_and_escape(_calculate_totalhours_on_date(history_date, ticket_changes_cursor))
                         ticket_values['remaininghours'] = encode_and_escape(_calculate_remaininghours_on_date(history_date, ticket_changes_cursor))
 
