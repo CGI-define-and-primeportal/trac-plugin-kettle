@@ -61,7 +61,8 @@ class HistoryStorageSystem(Component):
             for table in self.schema:
                 for statement in db_connector.to_sql(table):
                     cursor.execute(statement)
-                    cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")
+                    if env.config.get('trac', 'database').startswith('postgres'):
+                        cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")
 
             # system values are strings
             cursor.execute("INSERT INTO system (name, value) "
@@ -120,7 +121,8 @@ class HistoryStorageSystem(Component):
                            "WHERE name = 'bi_history_schema'", 
                            (str(self._schema_version),))
         elif found_version == 4:
-            cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")            
+            if env.config.get('trac', 'database').startswith('postgres'):
+                cursor.execute("ALTER TABLE ticket_bi_historical ALTER COLUMN _snapshottime SET NOT NULL")            
             cursor.execute("UPDATE system SET value = %s "
                            "WHERE name = 'bi_history_schema'", 
                            (str(self._schema_version),))
