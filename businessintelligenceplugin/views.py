@@ -1,5 +1,10 @@
+"""
+Maintain the database VIEW which simplifies access to the ticket data
+"""
+
+# pylint: disable=line-too-long
+
 from trac.core import Component, implements
-from trac.db import with_transaction
 from trac.env import IEnvironmentSetupParticipant
 from trac.admin import IAdminCommandProvider
 from trac.ticket.api import TicketSystem
@@ -13,10 +18,17 @@ class DatabaseViewSystem(Component):
     # IEnvironmentSetupParticipant
     _schema_version = 1
 
-    _custom_fields_in_basic_view_statement = (u'totalhours', u'resolvedinversion', u'qualityassurancecontact', u'estimatedhours', u'remaininghours')
-    _basic_select_statement = """
-"ticket"."id", 
-"ticket"."type", 
+    _view_name = "ticket_bi_current"
+
+    # pylint: disable=invalid-name
+    _custom_fields_in_basic_view_statement = (u'totalhours',
+                                              u'resolvedinversion',
+                                              u'qualityassurancecontact',
+                                              u'estimatedhours',
+                                              u'remaininghours')
+    _basic_select_statement = r"""
+"ticket"."id",
+"ticket"."type",
 
 TIMESTAMP WITH TIME ZONE 'epoch' + "ticket"."time"/1000000 * INTERVAL '1 second' AS "time",
 date_part('year',    TIMESTAMP WITH TIME ZONE 'epoch' + "ticket"."time"/1000000 * INTERVAL '1 second') AS "time_year",
@@ -43,51 +55,51 @@ date_part('day',     TIMESTAMP WITH TIME ZONE 'epoch' + (SELECT MAX(time) FROM t
 "ticket"."description",
 "ticket"."cc",
 
-"ticket"."component", 
-"ticket"."severity", 
-"ticket"."priority", 
+"ticket"."component",
+"ticket"."severity",
+"ticket"."priority",
 
-"ticket"."owner", 
+"ticket"."owner",
 "ownername"."value" as "owner_name",
 
-"ticket"."reporter", 
+"ticket"."reporter",
 "reportername"."value" as "reporter_name",
 
-"qualityassurancecontact"."value" AS "qualityassurancecontact", 
+"qualityassurancecontact"."value" AS "qualityassurancecontact",
 "qualityassurancecontactname"."value" as "qualityassurancecontact_name",
 
-"ticket"."version", 
+"ticket"."version",
 substring("ticket"."version" from '([\\d]+)\.[\\d]+\.[\\d]+') as "version_major",
 substring("ticket"."version" from '[\\d]+\.([\\d]+)\.[\\d]+') as "version_minor",
 substring("ticket"."version" from '[\\d]+\.[\\d]+\.([\\d]+)') as "version_point",
 substring("ticket"."version" from '[\\d]+\.[\\d]+\.[\\d]+(.+)') as "version_patch",
 
-"resolvedinversion"."value" AS "resolvedinversion", 
+"resolvedinversion"."value" AS "resolvedinversion",
 substring("resolvedinversion"."value" from '([\\d]+)\.[\\d]+\.[\\d]+') as "resolvedinversion_major",
 substring("resolvedinversion"."value" from '[\\d]+\.([\\d]+)\.[\\d]+') as "resolvedinversion_minor",
 substring("resolvedinversion"."value" from '[\\d]+\.[\\d]+\.([\\d]+)') as "resolvedinversion_point",
 substring("resolvedinversion"."value" from '[\\d]+\.[\\d]+\.[\\d]+(.+)') as "resolvedinversion_patch",
 
-"ticket"."milestone", 
-"ticket"."status", 
-"ticket"."resolution", 
-"ticket"."keywords", 
+"ticket"."milestone",
+"ticket"."status",
+"ticket"."resolution",
+"ticket"."keywords",
 
 CASE WHEN btrim("estimatedhours"."value")~E'^[\\d\\.]+$' THEN "estimatedhours"."value"::double precision ELSE 0.0 END AS "estimatedhours", 
 CASE WHEN btrim("totalhours"."value")~E'^[\\d\\.]+$' THEN "totalhours"."value"::double precision ELSE 0.0 END AS "totalhours", 
 CASE WHEN btrim("remaininghours"."value")~E'^[\\d\\.]+$' THEN "remaininghours"."value"::double precision ELSE 0.0 END AS "remaininghours"
 """
-    _basic_sql_statement = """
-FROM "ticket" "ticket" 
-LEFT OUTER JOIN "ticket_custom" "resolvedinversion" 
+    _basic_sql_statement = r"""
+FROM "ticket" "ticket"
+LEFT OUTER JOIN "ticket_custom" "resolvedinversion"
   ON ("ticket"."id" = "resolvedinversion"."ticket" AND "resolvedinversion"."name" = 'resolvedinversion')
-LEFT OUTER JOIN "ticket_custom" "qualityassurancecontact" 
+LEFT OUTER JOIN "ticket_custom" "qualityassurancecontact"
   ON ("ticket"."id" = "qualityassurancecontact"."ticket" AND "qualityassurancecontact"."name" = 'qualityassurancecontact')
-LEFT OUTER JOIN "ticket_custom" "remaininghours" 
+LEFT OUTER JOIN "ticket_custom" "remaininghours"
   ON ("ticket"."id" = "remaininghours"."ticket" AND "remaininghours"."name" = 'remaininghours')
-LEFT OUTER JOIN "ticket_custom" "totalhours" 
+LEFT OUTER JOIN "ticket_custom" "totalhours"
   ON ("ticket"."id" = "totalhours"."ticket" AND "totalhours"."name" = 'totalhours')
-LEFT OUTER JOIN "ticket_custom" "estimatedhours" 
+LEFT OUTER JOIN "ticket_custom" "estimatedhours"
   ON ("ticket"."id" = "estimatedhours"."ticket" AND "estimatedhours"."name" = 'estimatedhours')
 LEFT OUTER JOIN "session_attribute" "ownername"
   ON ("ticket"."owner" = "ownername"."sid" AND "ownername"."name" = 'name')
@@ -96,9 +108,13 @@ LEFT OUTER JOIN "session_attribute" "reportername"
 LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
   ON ("qualityassurancecontact"."value" = "qualityassurancecontactname"."sid" AND "qualityassurancecontactname"."name" = 'name')
 """
-    
+
     def environment_created(self):
-        db_connector, _ = DatabaseManager(self.env).get_connector()
+        """Create the initial VIEW and put in a revision number
+        to the system table. Note the revision number is not the revision of the
+        VIEW, as the VIEW will change over time custom fields are added."""
+
+        # pylint: disable=unused-variable,missing-docstring
         @self.env.with_transaction()
         def do_create(db):
             self.update_view(db=db)
@@ -106,10 +122,12 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
 
             # system values are strings
             cursor.execute("INSERT INTO system (name, value) "
-                           "VALUES ('bi_view_schema', %s)", 
+                           "VALUES ('bi_view_schema', %s)",
                            (str(self._schema_version),))
 
+    # pylint: disable=no-self-use
     def _check_schema_version(self, db):
+        """Fetch the value of bi_view_schema from the database, as an integer (or None)"""
         cursor = db.cursor()
         cursor.execute("select value from system where name = 'bi_view_schema'")
         row = cursor.fetchone()
@@ -119,6 +137,7 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
             return None
 
     def environment_needs_upgrade(self, db):
+        """Check if we don't have bi_view_schema marked in the db yet"""
         found_version = self._check_schema_version(db)
         if not found_version:
             self.log.debug("Initial schema needed for businessintelligence plugin for views")
@@ -132,11 +151,9 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
         return False
 
     def upgrade_environment(self, db):
+        """Create initial VIEW and insert bi_view_schema marker"""
         self.log.debug("Upgrading schema for bi view plugin")
-        
-        cursor = db.cursor()
-        db_connector, _ = DatabaseManager(self.env).get_connector()
-        
+
         found_version = self._check_schema_version(db)
         if not found_version:
             # Create view
@@ -146,8 +163,9 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
 
 
     # IAdminCommandProvider methods
-    
+
     def get_admin_commands(self):
+        """Command line utilities"""
         yield ('businessintelligence view update', '[drop]',
                "Check the database VIEW definition is up to date.",
                None, self.update_view)
@@ -155,9 +173,10 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
     # Internal methods
 
     def update_view(self, drop=None, db=None):
+        """Actually generate the VIEW, dropping existing one if caller asked for that."""
         ts = TicketSystem(self.env)
-        custom_fields = set(field['name'] for field in ts.fields if 'custom' in field)
 
+        # pylint: disable=unused-variable,missing-docstring
         @self.env.with_transaction(db)
         def do_update(db):
             print "Updating view"
@@ -189,9 +208,10 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
                             cs, cs, cs, field['name']))
 
             if drop == 'drop':
-                cursor.execute("DROP VIEW ticket_bi_current")
+                cursor.execute("DROP VIEW %s" % self._view_name)
 
-            create_view_statement = "CREATE OR REPLACE VIEW ticket_bi_current AS SELECT %s %s" % (
+            create_view_statement = "CREATE OR REPLACE VIEW %s AS SELECT %s %s" % (
+                self._view_name,
                 ",\n".join(select),
                 "\n".join(sql))
 
