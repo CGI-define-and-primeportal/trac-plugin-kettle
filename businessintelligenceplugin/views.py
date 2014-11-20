@@ -174,7 +174,22 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
 
     def update_view(self, drop=None, db=None):
         """Actually generate the VIEW, dropping existing one if caller asked for that."""
-        ts = TicketSystem(self.env)
+
+        # unfortunately we can't use
+        # TicketSystem(self.env).custom_fields, as some
+        # action_controllers are not ready to have
+        # get_calculated_fields() called during an Environment upgrade
+
+        config = self.config['ticket-custom']
+        fields = []
+        for name in [option for option, value in config.options()
+                     if '.' not in option]:
+            field = {
+                'name': name,
+                'type': config.get(name),
+                'datatype': config.get(name + '.datatype', 'string'),
+            }
+            fields.append(field)
 
         # pylint: disable=unused-variable,missing-docstring
         @self.env.with_transaction(db)
@@ -184,8 +199,8 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
             select = [self._basic_select_statement]
             sql = [self._basic_sql_statement]
 
-            for cs, field in enumerate(ts.fields):
-                if 'custom' in field and field['name'] not in self._custom_fields_in_basic_view_statement:
+            for cs, field in enumerate(fields):
+                if field['name'] not in self._custom_fields_in_basic_view_statement:
 
                     if  field['type'] == "text" and field['datatype'] == "float":
                         select.append('CASE WHEN btrim("cs%d"."value")~E\'^[\\d\\.]+$\' THEN "cs%d"."value"::double precision ELSE 0.0 END AS %s' % (
