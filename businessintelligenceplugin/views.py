@@ -208,7 +208,7 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
                             cs, cs, cs, field['name']))
 
             if drop == 'drop':
-                cursor.execute("DROP VIEW %s" % self._view_name)
+                cursor.execute("DROP VIEW IF EXISTS %s" % self._view_name)
 
             create_view_statement = "CREATE OR REPLACE VIEW %s AS SELECT %s %s" % (
                 self._view_name,
