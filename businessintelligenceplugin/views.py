@@ -114,16 +114,17 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
         to the system table. Note the revision number is not the revision of the
         VIEW, as the VIEW will change over time custom fields are added."""
 
-        # pylint: disable=unused-variable,missing-docstring
-        @self.env.with_transaction()
-        def do_create(db):
-            self.update_view(db=db)
-            cursor = db.cursor()
+        if self.env.config.get('trac', 'database').startswith('postgres'):
+            # pylint: disable=unused-variable,missing-docstring
+            @self.env.with_transaction()
+            def do_create(db):
+                self.update_view(db=db)
+                cursor = db.cursor()
 
-            # system values are strings
-            cursor.execute("INSERT INTO system (name, value) "
-                           "VALUES ('bi_view_schema', %s)",
-                           (str(self._schema_version),))
+                # system values are strings
+                cursor.execute("INSERT INTO system (name, value) "
+                               "VALUES ('bi_view_schema', %s)",
+                               (str(self._schema_version),))
 
     # pylint: disable=no-self-use
     def _check_schema_version(self, db):
@@ -138,17 +139,18 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
 
     def environment_needs_upgrade(self, db):
         """Check if we don't have bi_view_schema marked in the db yet"""
-        found_version = self._check_schema_version(db)
-        if not found_version:
-            self.log.debug("Initial schema needed for businessintelligence plugin for views")
-            return True
-        else:
-            if found_version < self._schema_version:
-                self.log.debug("Upgrade schema from %d to %d needed for businessintelligence plugin for view table",
-                               found_version,
-                               self._schema_version)
+        if self.env.config.get('trac', 'database').startswith('postgres'):
+            found_version = self._check_schema_version(db)
+            if not found_version:
+                self.log.debug("Initial schema needed for businessintelligence plugin for views")
                 return True
-        return False
+            else:
+                if found_version < self._schema_version:
+                    self.log.debug("Upgrade schema from %d to %d needed for businessintelligence plugin for view table",
+                                   found_version,
+                                   self._schema_version)
+                    return True
+            return False
 
     def upgrade_environment(self, db):
         """Create initial VIEW and insert bi_view_schema marker"""
@@ -166,9 +168,10 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
 
     def get_admin_commands(self):
         """Command line utilities"""
-        yield ('businessintelligence view update', '[drop]',
-               "Check the database VIEW definition is up to date.",
-               None, self.update_view)
+        if self.env.config.get('trac', 'database').startswith('postgres'):
+            yield ('businessintelligence view update', '[drop]',
+                   "Check the database VIEW definition is up to date.",
+                   None, self.update_view)
 
     # Internal methods
 
