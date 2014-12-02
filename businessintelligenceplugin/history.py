@@ -594,15 +594,33 @@ def startofnextday(date):
     else:
         return None
 
-@memodict
+# can't use memodict, as it doesn't distinguish between
+# encode_and_escape(1) vs. encode_and_escape(1.0) Taking a gamble (as
+# did memodict) on overall memory consumption. If needed, we could use
+# https://pypi.python.org/pypi/backports.functools_lru_cache
+# (with typed=True)
+encode_and_escape_dict = {}
 def encode_and_escape(o):
+    """
+>>> encode_and_escape(1)
+'1'
+>>> encode_and_escape(1.0)
+'1.0'
+>>> encode_and_escape(1)
+'1'
+    """
     if o is None:
         return r'\N'
     else:
-        # http://www.postgresql.org/docs/8.1/static/sql-copy.html
-        # http://docs.python.org/2/reference/lexical_analysis.html#string-literals
-        # http://initd.org/psycopg/docs/cursor.html#cursor.copy_expert
-        return unicode(o).encode('utf-8').encode('string_escape')
+        try:
+            return encode_and_escape_dict[(type(o), o)]
+        except KeyError:
+            # http://www.postgresql.org/docs/8.1/static/sql-copy.html
+            # http://docs.python.org/2/reference/lexical_analysis.html#string-literals
+            # http://initd.org/psycopg/docs/cursor.html#cursor.copy_expert
+            r = unicode(o).encode('utf-8').encode('string_escape')
+            encode_and_escape_dict[(type(o), o)] = r
+            return r
 
 @memodict
 def unencode_and_unescape(o):
