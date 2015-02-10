@@ -21,11 +21,62 @@ class DatabaseViewSystem(Component):
     _view_name = "ticket_bi_current"
 
     # pylint: disable=invalid-name
-    _custom_fields_in_basic_view_statement = (u'totalhours',
-                                              u'resolvedinversion',
-                                              u'qualityassurancecontact',
-                                              u'estimatedhours',
-                                              u'remaininghours')
+    _fields_in_basic_view_statement = set((u'summary',
+                                           u'owner',
+                                           u'owner_name',
+                                           u'reporter',
+                                           u'reporter_name',                                       
+                                           u'description',
+                                           u'statusgroup',
+                                           u'workflow',
+                                           u'type',
+                                           u'status',
+                                           u'priority',
+                                           u'milestone',
+                                           u'component',
+                                           u'version',
+                                           u'resolution',
+                                           u'keywords',
+                                           u'cc',
+                                           u'time',
+                                           u"time_year",
+                                           u"time_quarter",
+                                           u"time_month",
+                                           u"time_week",
+                                           u"time_day",
+                                           
+                                           u"changetime",
+                                           u"changetime_year",
+                                           u"changetime_quarter",
+                                           u"changetime_month",
+                                           u"changetime_week",
+                                           u"changetime_day",
+                                           
+                                           u"resolutiontime",
+                                           u"resolutiontime_year",
+                                           u"resolutiontime_quarter",
+                                           u"resolutiontime_month",
+                                           u"resolutiontime_week",
+                                           u"resolutiontime_day",
+                                           
+                                           u"version_major",
+                                           u"version_minor",
+                                           u"version_point",
+                                           u"version_patch",
+                                           
+                                           u"resolvedinversion",
+                                           u"resolvedinversion_major",
+                                           u"resolvedinversion_minor",
+                                           u"resolvedinversion_point",
+                                           u"resolvedinversion_patch",
+                                           
+                                           u'totalhours',
+                                           u'resolvedinversion',
+                                           u'qualityassurancecontact',
+                                           u'qualityassurancecontact_name',
+                                           u'estimatedhours',
+                                           u'remaininghours'))
+    
     _basic_select_statement = r"""
 "ticket"."id",
 "ticket"."type",
@@ -203,7 +254,7 @@ LEFT OUTER JOIN "session_attribute" "qualityassurancecontactname"
             sql = [self._basic_sql_statement]
 
             for cs, field in enumerate(fields):
-                if field['name'] not in self._custom_fields_in_basic_view_statement:
+                if field['name'] not in self._fields_in_basic_view_statement:
 
                     if  field['type'] == "text" and field['datatype'] == "float":
                         select.append('CASE WHEN btrim("cs%d"."value")~E\'^[\\d\\.]+$\' THEN "cs%d"."value"::double precision ELSE 0.0 END AS %s' % (
