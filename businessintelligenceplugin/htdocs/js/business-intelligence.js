@@ -7,7 +7,7 @@ $(document).ready(function() {
   $("#content").find("h2").addAnchor(_("Link to this section"));
 
   $('.toggle-parameters-form').click(function(e) {
-    $("i", this).toggleClass("icon-resize-full icon-resize-small");
+    $("i", this).toggleClass("fa fa-expand fa-compress");
     $(this).parent().parent().find('.parameters-form').toggle('slow');
   });
 
@@ -46,7 +46,7 @@ $(document).ready(function() {
               clearTimeout(specific_elem.data("timeout"));
               specific_elem.data("n", 0);
               $(".execute-actions .btn", specific_elem).removeClass("disabled");
-              $(".execute-actions .btn:first", specific_elem).html("<i class='icon-bolt'></i> Execute ");
+              $(".execute-actions .btn:first", specific_elem).html("<i class='fa fa-bolt'></i> Execute ");
             }
 
           }
@@ -135,13 +135,13 @@ $(document).ready(function() {
     **/
 
     // update the UI (change button styling, add a alert message)
-    group_label.removeClass("btn-warning disabled").addClass('btn-success').html("<i class='icon-bolt'></i> Execute");
+    group_label.removeClass("btn-warning disabled").addClass('btn-success').html("<i class='fa fa-bolt'></i> Execute");
     $(".btn", btn_handler).removeClass("btn-warning disabled").addClass("btn-success");
     $("#content").prepend('<div class="cf alert ' + alert + ' alert-dismissable individual">\
-                            <i class="alert-icon icon-info-sign"></i>\
+                            <i class="alert-icon fa fa-info-circle"></i>\
                             <div style="display:inline">' + message + '</div>\
                             <button type="button" class="close btn btn-mini" data-dismiss="alert">\
-                              <i class="icon-remove"></i>\
+                              <i class="fa fa-times"></i>\
                             </button>\
                           </div>')
   }
@@ -160,7 +160,7 @@ $(document).ready(function() {
       $("#exec-form input.bi-parameter").remove();
       $transform_wrapper.find("input.bi-parameter").clone().appendTo($("#exec-form"));
       // Change the button state to loading
-      $group_label.html("<i class='icon-spin icon-spinner'></i> Executing...");
+      $group_label.html("<i class='fa fa-spin fa-spinner'></i> Executing...");
       $group_label.removeClass("btn-success").addClass("btn-warning");
       $group_label.next().removeClass("btn-success").addClass("btn-warning");
       $(".btn", $execute_btn_handler).addClass("disabled");
@@ -191,7 +191,7 @@ $(document).ready(function() {
         // a response so we know for sure when to change the icons back?
         setTimeout(function() {
           $(".btn", $execute_btn_handler).removeClass("disabled");
-          $group_label.removeClass("disabled").addClass("btn-success").html("<i class='icon-bolt'></i> Execute");
+          $group_label.removeClass("disabled").addClass("btn-success").html("<i class='fa fa-bolt'></i> Execute");
           $group_label.next().addClass("btn-success");
         }, 30000);
         $("#exec-form").submit();
@@ -226,7 +226,7 @@ $(document).ready(function() {
         // add new rows
         $('#runningtable').append('<tr><th>UUID</th><th>Started</th><th>Running</th></tr>');
         for (var i=0; i < data.length; i++) {
-          $('#runningtable').append('<tr><td>' + data[i]['id'] + '</td><td>' + new Date (data[i]['started']) + '</td><td><i class="icon-spin icon-spinner"></i></td></tr>');
+          $('#runningtable').append('<tr><td>' + data[i]['id'] + '</td><td>' + new Date (data[i]['started']) + '</td><td><i class="fa fa-spin fa-spinner"></i></td></tr>');
         }
       },
       error: function(data) {
