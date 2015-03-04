@@ -7,7 +7,7 @@ from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_c
 from trac.util import content_disposition
 from trac.util.datefmt import to_utimestamp, utc
 from trac.util.presentation import to_json
-
+from trac.env import IEnvironmentSetupParticipant
 
 from tracrpc.api import IXMLRPCHandler, Binary
 
@@ -22,6 +22,7 @@ import uuid
 import types
 import glob
 import os
+import errno
 from lxml import etree
 import tempfile
 import shutil
@@ -39,7 +40,30 @@ class TransformExecutor(Component):
                IXMLRPCHandler,
                IPermissionRequestor,
                IRequestHandler,
-               ITemplateProvider)
+               ITemplateProvider,
+               IEnvironmentSetupParticipant)
+
+    # IEnvironmentSetupParticipant
+    def _create_folders(self):
+        for d in ("job-templates", "transformation-templates"):
+            try:
+                os.mkdir(os.path.join(self.env.path, d))
+            except OSError, e:
+                if e.errno != errno.EEXIST:
+                    raise
+    
+    def environment_created(self):
+        self._create_folders()
+
+    def environment_needs_upgrade(self, db):
+        for d in ("job-templates", "transformation-templates"):
+            if not os.path.exists(os.path.join(self.env.path, d)):
+                return True
+        return False
+
+    def upgrade_environment(self, db):
+        self._create_folders()
+
 
     # IRequestHandler methods
 
