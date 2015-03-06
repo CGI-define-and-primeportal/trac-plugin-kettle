@@ -107,9 +107,9 @@ class TransformExecutor(Component):
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-calendar"), ' Schedule Transformations', id="schedulebutton"))
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-cog"), ' Running Transformations', id="runningbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-calendar"), ' Schedule Transformations', id="schedulebutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-cog"), ' Running Transformations', id="runningbutton"))
 
             return "listtransformations.html", data, None
 
