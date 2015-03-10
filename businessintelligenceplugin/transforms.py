@@ -487,7 +487,7 @@ class TransformContextMenu(Component):
         if 'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm:
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
-                return tag.a(tag.i(class_="icon-cog"),
+                return tag.a(tag.i(class_="fa fa-cog"),
                              ' Regenerate with %s (default parameters)' % transform, 
                              href=req.href.businessintelligence(action='execute',
                                                                 transform=transform,
@@ -507,7 +507,7 @@ class TransformWithParametersContextMenu(Component):
         if 'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm:
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
-                return tag.a(tag.i(class_="icon-cog"),
+                return tag.a(tag.i(class_="fa fa-cog"),
                              ' Regenerate with %s (provide parameters)' % transform, 
                              href=req.href.businessintelligence() + "#" + transform)
             
