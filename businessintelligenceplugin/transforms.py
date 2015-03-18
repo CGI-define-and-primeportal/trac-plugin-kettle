@@ -131,9 +131,9 @@ class TransformExecutor(Component):
             add_script(req, 'contextmenu/contextmenu.js')
             add_script(req, 'businessintelligenceplugin/js/business-intelligence.js')
             add_stylesheet(req, 'common/css/browser.css')
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-upload"), ' Upload Transformations', id="uploadbutton"))
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-calendar"), ' Schedule Transformations', id="schedulebutton"))
-            add_ctxtnav(req, tag.a(tag.i(class_="icon-cog"), ' Running Transformations', id="runningbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-upload"), ' Upload Transformations', id="uploadbutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-calendar"), ' Schedule Transformations', id="schedulebutton"))
+            add_ctxtnav(req, tag.a(tag.i(class_="fa fa-cog"), ' Running Transformations', id="runningbutton"))
 
             return "listtransformations.html", data, None
 
@@ -511,7 +511,7 @@ class TransformContextMenu(Component):
         if 'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm:
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
-                return tag.a(tag.i(class_="icon-cog"),
+                return tag.a(tag.i(class_="fa fa-cog"),
                              ' Regenerate with %s (default parameters)' % transform, 
                              href=req.href.businessintelligence(action='execute',
                                                                 transform=transform,
@@ -531,7 +531,7 @@ class TransformWithParametersContextMenu(Component):
         if 'BUSINESSINTELLIGENCE_TRANSFORMATION_EXECUTE' in req.perm:
             if entry.path.startswith("define-reports/"):
                 transform = entry.path.split("/")[1]
-                return tag.a(tag.i(class_="icon-cog"),
+                return tag.a(tag.i(class_="fa fa-cog"),
                              ' Regenerate with %s (provide parameters)' % transform, 
                              href=req.href.businessintelligence() + "#" + transform)
             

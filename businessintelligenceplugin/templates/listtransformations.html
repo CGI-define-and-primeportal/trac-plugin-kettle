@@ -12,7 +12,7 @@
     <div id="content" class="business-intelligence">
       <h1>Business Intelligence</h1>
       <p class="about-business-intelligence visible-desktop">
-        <i class="icon-info-sign"></i> Jobs and Transformations can
+        <i class="fa fa-info-circle"></i> Jobs and Transformations can
         retrieve and manipulate tickets. To run a job or
         transformations, click the execute button, and wait for it to
         complete. Any new output will be automatically updated in the
@@ -98,25 +98,25 @@
           <div>
             <div class="execute-actions btn-group" data-transform="${transform}">
               <a data-action="execute_async" class="btn btn-mini btn-success group-label">
-                <i class="icon-bolt"></i> Execute ${details.type}
+                <i class="fa fa-bolt"></i> Execute ${details.type}
               </a>
               <a class="btn btn-mini btn-success dropdown-toggle">
                 <span class="caret"></span>
               </a>
               <ul class="styled-dropdown create">
-                <li><a data-action="execute_async" href="#"><i class="icon-upload"></i> Store to File Archive</a></li>
-                <li><a data-action="execute_download" href="#"><i class="icon-cloud-download"></i> Download</a></li>
+                <li><a data-action="execute_async" href="#"><i class="fa fa-arrow-circle-o-up"></i> Store to File Archive</a></li>
+                <li><a data-action="execute_download" href="#"><i class="fa fa-cloud-download"></i> Download</a></li>
               </ul>
             </div>
 	    <a py:if="'parameters' in details" class="btn btn-mini btn-primary toggle-parameters-form">
-	      <i class="icon-resize-full"></i> Parameters
+	      <i class="fa fa-expand"></i> Parameters
 	    </a>
             <a class="btn btn-mini btn-primary get-url-btn" 
                href="${req.abs_href.businessintelligence(action='execute_download', transform=transform, disable_automatic_login=1)}">
-              <i class="icon-globe"></i> Integration URL
+              <i class="fa fa-globe"></i> Integration URL
             </a>
             <a class="btn btn-mini btn-primary archive-view-btn" href="${req.href.browser('define-reports', transform)}">
-              <i class="icon-file"></i> View in Archive
+              <i class="fa fa-file"></i> View in Archive
             </a>
           </div>
 	  <div class="parameters-form hidden">
