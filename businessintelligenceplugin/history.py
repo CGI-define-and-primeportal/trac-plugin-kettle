@@ -2,15 +2,12 @@ from trac.admin import IAdminCommandProvider
 from trac.core import Component, implements
 from trac.db import Table, Column, Index, DatabaseManager, with_transaction
 from trac.env import IEnvironmentSetupParticipant
-from trac.config import BoolOption
 from trac.ticket.api import TicketSystem
-import psycopg2
 import os
 import datetime
-import types
 import itertools
 from cStringIO import StringIO
-from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc, utcmax
+from trac.util.datefmt import from_utimestamp, to_utimestamp, to_timestamp, utc
 from logicaordertracker.controller import LogicaOrderController
 
 class HistoryStorageSystem(Component):

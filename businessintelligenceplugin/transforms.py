@@ -1,9 +1,9 @@
 from trac.admin import IAdminCommandProvider
-from trac.core import Component, implements, TracError
+from trac.core import Component, implements
 from trac.versioncontrol.api import RepositoryManager, NoSuchNode
 from trac.perm import IPermissionRequestor
 from trac.web import IRequestHandler, RequestDone, HTTPNotFound 
-from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav
+from trac.web.chrome import ITemplateProvider, add_script, add_stylesheet, add_ctxtnav, add_warning
 from trac.util import content_disposition
 from trac.util.datefmt import to_utimestamp, utc
 from trac.util.presentation import to_json
@@ -327,7 +327,6 @@ class TransformExecutor(Component):
 
         if store:
             reponame, repos, path = RepositoryManager(self.env).get_repository_by_path('')
-            svn_writer = SubversionWriter(self.env, repos, "reporting")
             revs = []
             for filename_encoded in os.listdir(os.path.join(tempdir, "svn")):
                 filename = filename_encoded.decode('utf-8') # we wrote the filename out ourselves

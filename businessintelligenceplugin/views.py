@@ -7,7 +7,6 @@ Maintain the database VIEW which simplifies access to the ticket data
 from trac.core import Component, implements
 from trac.env import IEnvironmentSetupParticipant
 from trac.admin import IAdminCommandProvider
-from trac.ticket.api import TicketSystem
 
 class DatabaseViewSystem(Component):
     """trac-admin command provider for business intelligence plugin."""

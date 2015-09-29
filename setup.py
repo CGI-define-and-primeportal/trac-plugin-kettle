@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2013 CGI IT UK Ltd
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='businessintelligenceplugin', 

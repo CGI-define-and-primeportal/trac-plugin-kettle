@@ -1,5 +1,5 @@
-from trac.core import Component, TracError, implements
-from trac.db import Table, Column, Index, DatabaseManager, with_transaction
+from trac.core import Component, implements
+from trac.db import Table, Column, Index, DatabaseManager
 from trac.env import IEnvironmentSetupParticipant
 
 
@@ -58,7 +58,7 @@ class BusinessIntelligenceLogging(Component):
     def upgrade_environment(self, db):
         self.log.debug("Upgrading schema for business intelligence logging table")
         
-        cursor = db.cursor()
+        db.cursor()
         db_connector, _ = DatabaseManager(self.env).get_connector()
         
         found_version = self._check_schema_version(db)
