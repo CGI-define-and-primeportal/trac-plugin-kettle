@@ -1,16 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2013 CGI IT UK Ltd
+
+# Copyright (C) 2015 CGI, excluding businessintelligenceplugin/pentaho-data-integration
+# See businessintelligenceplugin/pentaho-data-integration/LICENSE.txt
+# for terms which apply to the contents of that folder.
 
 from setuptools import setup, find_packages
 
 setup(
-    name='businessintelligenceplugin', 
+    name='BusinessIntelligencePlugin', 
     version=0.1,
     description='Support Business Intelligence and Data Warehousing',
     author="Nick Piper", 
     author_email="nick.piper@cgi.com",
-    license='BSD', 
+    maintainer="CGI CoreTeam",
+    maintainer_email="coreteam.service.desk.se@cgi.com",
+    contact="CGI CoreTeam",
+    contact_email="coreteam.service.desk.se@cgi.com",
+    classifiers=['License :: OSI Approved :: BSD License'],
+    license='BSD',
     url='http://define.primeportal.com/',
     packages = ['businessintelligenceplugin'],
     package_data={
